@@ -1,13 +1,11 @@
-function [spks,events,fs,cellInfo,labels] = getSpikeEventsKS(myPath)
+function [spikes,events,fs,cellInfo,labels] = getSpikeEventsKS(myPath)
 %
-% FIGURE OUT BEST SPIKE OUTPUT TO HAVE (12/4/20)
 %
 % This function loads spikes, events, and other cell info from
 % kilosort-sorted data recorded by spikeGLX.
 %
 % INPUTS:
-%  root: the path to your data, eg. "~/data/kilosort/CA070/2018-08-08_10-21-04/experiment1/recording1"
-%        the next folders after what you input as "root" should include "continuous" and "events"
+%  root: the path to your data (for spikeGLX, should be 'rootdir\MouseID\SessionID\'
 %
 % OUTPUTS:
 %  spikes: a struct with spike data; 
@@ -15,16 +13,15 @@ function [spks,events,fs,cellInfo,labels] = getSpikeEventsKS(myPath)
 %          .clust = cluster id per spike
 %          .clustID = a list of unique clusters in the data
 %          .labels = label of unit type per cluster
+%          .spks = cell containing spike times for each cluster
 %  events: a struct with event data; %
-%          .times = event times for each channel; 1st dim = event channel and 2nd = on/off time
-%                   eg. for channel 1 on times, I want events.times{1,1}
-%          .allEv = original ev struct, just in case
-%          .recStart = recording start time
-%          .msgtext = struct with typed in messages and timestamps for each
-%          .blockStart = a hold over from the loadEventData.m function, which will be the event
-%                        time you selected when running that function
+%          .MouseID = Mouse ID
+%          .SessionID = Session ID
+%          .lickEv = struct with lick event indices
+%          .trialStartEv = trial start event indices
+%          .fsEv = nidaq sampling rate
 %  fs: recording sampling rate
-%  cellInfo: cell array with information for each cell
+%  cellInfo: cell array with information for each cluster
 %  labels: cell array with the labels for each column in cell info
 
 %% Extract file names
@@ -90,7 +87,8 @@ for i = 1:length(spikes.clustID)
     elseif strcmp(cellInfo{i,5},'mua')
         cellInfo{i,6} = 2;
     end
-    spks{i} = spikes.times(spikes.clust == spikes.clustID(i)); %Will give spike times in seconds relative to recording start for each cluster
+    spks = spikes.times(spikes.clust == spikes.clustID(i)); %Will give spike times in seconds relative to recording start for each cluster
+    spikes.spks{i} = spks;
     cellInfo{i,7} = length(spks) / (spks(end) - spks(1)); % mean fr
     
 end
