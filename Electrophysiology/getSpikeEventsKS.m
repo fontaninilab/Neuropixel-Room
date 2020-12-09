@@ -73,7 +73,7 @@ spikes.labels = labels;
 
 %% Make cell info matrix
 
-labels = {'mouse','session','clustID','cellNum','unitType','unitTypeNum','meanFR'};
+labels = {'mouseID','sessionID','clustID','cellNum','unitType','unitTypeNum','meanFR'};
 for i = 1:length(spikes.clustID)
     
     cellInfo{i,1} = nameChunks{1}; % mouse
