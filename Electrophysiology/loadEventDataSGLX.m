@@ -1,17 +1,20 @@
-function [lickEv, trialStartEv, fsEv] = loadEventDataSGLX(myPath,fig)
+function [Ev, fsEv] = loadEventDataSGLX(myPath,dataType, ch, chanID)
+%[lickEv, trialStartEv, fsEv] = loadEventDataSGLX(myPath,dataType, ch)
 %
 % Extract event data from Spike GLX file formats where events are recorded
 % via nidaq
 %
 % INPUTS:
 %   myPath = (string) path directory to folder containing nidaq data (parent to imec0 folder)
-%   fig = 0, optional input to produce figure to look at lick and trial
-%         start event times aligned.
+%   dataType = (string) indicates data type, digital ('D') or analog ('A')
+%   ch = (array) channel ID's for analog (goes unused for digital)
+%   chanID = (cell of strings) string IDs for each analog channel (goes unused for digital)
 %
 % OUTPUTS:
-%   lickEv = struct containing central, left, and right lick event times
-%            from analog channels
-%   trialStartEv
+%   Ev = for 'A', struct containing central, left, and right lick event times
+%            from analog channels. For 'D', array containing trial start
+%            event times.
+%   fsEv = sampling rate of nidaq
 
 
 fileChunks = strsplit(myPath,'\');
@@ -31,64 +34,51 @@ dataArray = SGLXReadBin(0, nSamp, NI_meta, NI_binName, myPath); %Loads data from
 
 %%% 1. Load analog channel data (these are the lick events) %%%
 
-dataType = 'A'; 
-ch = [1 2 3]; %Channels to extract
-lickChanID = {'central','left','right'}; %IDs of each channel
+if strcmp(dataType,'A')
+    %lickChanID = {'central','left','right'}; %IDs of each channel
+    lickChanID = chanID;
 
+    [MN,MA] = ChannelCountsNI(NI_meta);
+    fI2V = Int2Volts(NI_meta);
+    dataArrayA = dataArray(ch,:); 
 
-[MN,MA] = ChannelCountsNI(NI_meta);
-fI2V = Int2Volts(NI_meta);
-dataArrayA = dataArray(ch,:); 
+    for i = 1:length(ch)
+        j = ch(i);    % index into timepoint
+        conv = fI2V / ChanGainNI(j, MN, MA, NI_meta);
+        dataArrayA(j,:) = dataArrayA(j,:) * conv;
+    end
 
-for i = 1:length(ch)
-    j = ch(i);    % index into timepoint
-    conv = fI2V / ChanGainNI(j, MN, MA, NI_meta);
-    dataArrayA(j,:) = dataArrayA(j,:) * conv;
-end
+    %Extract lick indices from data array
+    for i = 1:length(lickChanID)
+        lickIDX = find(dataArrayA(i,:)>0.5);
+        lickIDXdiff = diff(lickIDX);
+        lickstart = find(lickIDXdiff > 1) + 1;
+        firsttrial = 1;
+        lickEv.(lickChanID{i}) = lickIDX([firsttrial lickstart]);    
 
-%Extract lick indices from data array
-for i = 1:length(lickChanID)
-    lickIDX = find(dataArrayA(i,:)>0.5);
-    lickIDXdiff = diff(lickIDX);
-    lickstart = find(lickIDXdiff > 1) + 1;
-    firsttrial = 1;
-    lickEv.(lickChanID{i}) = lickIDX([firsttrial lickstart]);    
+    end
     
-end
-
+    Ev = lickEv;
 
 %%% 2. Load digital channel data (these are the trial start events) %%%
-dataType = 'D'; 
-
-dw = 1;
-dLineList = 0;
-
-
-digArray = ExtractDigital(dataArray, NI_meta, dw, dLineList);
-
-digPeakIDX = find(digArray); %Finds indices where values are > 0
-digPeakDiff = diff(digPeakIDX); %Calculates difference between adjacent indices of digPeakIDX
-boutstart = find(digPeakDiff > 1)+1; %Find where difference between consecutive indices is > 1 (and add 1 for correct start index)
-firsttrial = 1;
-trialStartEv = digPeakIDX([firsttrial boutstart]); %Extract indices of each trial start
+elseif strcmp(dataType,'D')
+    dw = 1;
+    dLineList = 0;
 
 
-%%% 3. Plot event times to manually check for alignment (optional) %%%
-if nargin > 1
-    figure;
-    scatter(trialStartEv./fsEv,1.02*ones(1,length(trialStartEv)),'*');
-    hold on; scatter(lickEv.central./fsEv,ones(1,length(lickEv.central)),'filled','k');
-    scatter(lickEv.left./fsEv,0.98*ones(1,length(lickEv.left)),'filled','r');
-    scatter(lickEv.right./fsEv,0.98*ones(1,length(lickEv.right)),'filled','b');
+    digArray = ExtractDigital(dataArray, NI_meta, dw, dLineList);
 
-
-    set(gca,'ylim',[0.95 1.05]);
-    legend('Trial start','central lick','left lick','right lick','Location','best');
-end
+    digPeakIDX = find(digArray); %Finds indices where values are > 0
+    digPeakDiff = diff(digPeakIDX); %Calculates difference between adjacent indices of digPeakIDX
+    boutstart = find(digPeakDiff > 1)+1; %Find where difference between consecutive indices is > 1 (and add 1 for correct start index)
+    firsttrial = 1;
+    trialStartEv = digPeakIDX([firsttrial boutstart]); %Extract indices of each trial start
+    
+    Ev = trialStartEv;
 
 
 end
-
+end
 
 function digArray = ExtractDigital(dataArray, meta, dwReq, dLineList)
     % Get channel index of requested digital word dwReq
