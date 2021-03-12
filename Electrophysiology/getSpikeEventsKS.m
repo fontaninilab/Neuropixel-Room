@@ -1,11 +1,10 @@
 function [spikes,events,fs,cellInfo,labels] = getSpikeEventsKS(myPath)
 %
-%
 % This function loads spikes, events, and other cell info from
 % kilosort-sorted data recorded by spikeGLX.
 %
 % INPUTS:
-%  root: the path to your data (for spikeGLX, should be 'rootdir\MouseID\SessionID\'
+%  root: the path to your data (for spikeGLX, should be 'rootdir\MouseID\SessionID\')
 %
 % OUTPUTS:
 %  spikes: a struct with spike data; 
@@ -14,6 +13,7 @@ function [spikes,events,fs,cellInfo,labels] = getSpikeEventsKS(myPath)
 %          .clustID = a list of unique clusters in the data
 %          .labels = label of unit type per cluster
 %          .chans = channel # for each cluster
+%          .depth = depth (in um) of each cluster - distance above base
 %          .spks = cell containing spike times for each cluster
 %  events: a struct with event data; %
 %          .MouseID = Mouse ID
@@ -33,7 +33,8 @@ nameChunks = strsplit(fileChunks{end},'_');
 %        Extract events
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[lickEv, trialStartEv, fsEv] = loadEventDataSGLX(myPath,0);
+[trialStartEv, fsEv] = loadEventDataSGLX(myPath,'D');
+[lickEv, ~ ] =  loadEventDataSGLX(myPath,'A',[1 2 3],{'central','left','right'});
 
 % Save all event info in one
 events.MouseID = nameChunks{1};
@@ -41,6 +42,18 @@ events.SessionID = nameChunks{2};
 events.lickEv = lickEv;
 events.trialStartEv = trialStartEv;
 events.fsEv = fsEv;
+
+% %%% Plot event times to manually check for alignment (optional) %%% %
+
+% % figure;
+% % scatter(trialStartEv./fsEv,1.02*ones(1,length(trialStartEv)),'*');
+% % hold on; scatter(lickEv.central./fsEv,ones(1,length(lickEv.central)),'filled','k');
+% % scatter(lickEv.left./fsEv,0.98*ones(1,length(lickEv.left)),'filled','r');
+% % scatter(lickEv.right./fsEv,0.98*ones(1,length(lickEv.right)),'filled','b');
+% % 
+% % 
+% % set(gca,'ylim',[0.95 1.05]);
+% % legend('Trial start','central lick','left lick','right lick','Location','best');
 
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -62,23 +75,27 @@ opts.DataLines = [2, Inf];
 opts.Delimiter = "\t";
 opts.VariableNames = ["id", "Amplitude", "ContamPct", "KSLabel", "amp", "ch", "depth", "fr", "group", "n_spikes", "sh"];
 opts.VariableTypes = ["double", "double", "double", "char", "double", "double", "double", "double", "char", "double", "double"];
-dat = readtable('cluster_info.tsv',opts);
+dat = readtable([myPath '\' fileChunks{end} '_imec0\cluster_info.tsv'],opts);
 
 % discard noise clusters
 clustID = dat.id(~contains(dat.group,'noise'));
 labels = dat.group(~contains(dat.group,'noise'));
 chans = dat.ch(~contains(dat.group,'noise'));
+depth = dat.depth(~contains(dat.group,'noise'));
 
 spikes.times = spks;
 spikes.clust = clust;
 spikes.clustID = clustID;
 spikes.labels = labels;
 spikes.chans = chans;
+spikes.depth = depth;
 
 
-%% Make cell info matrix
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%    Make cell info matrix
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-labels = {'mouseID','sessionID','clustID','cellNum','unitType','unitTypeNum','channel','meanFR'};
+labels = {'mouseID','sessionID','clustID','cellNum','unitType','unitTypeNum','channel','depth','meanFR'};
 for i = 1:length(spikes.clustID)
     
     cellInfo{i,1} = nameChunks{1}; % mouse
@@ -93,10 +110,11 @@ for i = 1:length(spikes.clustID)
         cellInfo{i,6} = 2;
     end
     cellInfo{i,7} = spikes.chans(i); % channel 
+    cellInfo{i,8} = spikes.depth(i); % depth
     
     spks = spikes.times(spikes.clust == spikes.clustID(i)); %Will give spike times in seconds relative to recording start for each cluster
     spikes.spks{i} = spks;
-    cellInfo{i,8} = length(spks) / (spks(end) - spks(1)); % mean fr
+    cellInfo{i,9} = length(spks) / (spks(end) - spks(1)); % mean fr
     
 end
     
