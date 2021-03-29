@@ -1,13 +1,14 @@
-rootdir = 'D:\Neuropixel Data\Tests\';
+rootdir = 'D:\Neuropixel Data\';
 sep = '\';
-outputdir = 'D:\Neuropixel Data\Spikes\';
+outputdir = 'D:\Spikes\';
 
-MouseID = 'GC002';
-SessionID = '201110';
+MouseID = 'TDPQF065';
+SessionID = 'Session1';
 mkdir(outputdir,MouseID);
 
 
-myPath = [rootdir MouseID sep MousID '_' SessionID '_g0']; %Folder containing nidaq data (parent folder to imec0 folder)
+%myPath = [rootdir MouseID sep MouseID '_' SessionID '_g0']; %Folder containing nidaq data (parent folder to imec0 folder)
+myPath = 'D:\Neuropixel Data\TDPQF065\TDPQF065_Session1_201230_g0'; 
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  Extract spikes and events for a given session
@@ -16,8 +17,8 @@ myPath = [rootdir MouseID sep MousID '_' SessionID '_g0']; %Folder containing ni
 [spikes,events,fs,cellInfo,labels] = getSpikeEventsKS(myPath);
 
 
-cd([outputdir MouseID]);
-save([MouseID '-' SessionID '-ClusterData'],'spks','fs','cellInfo','labels');
+cd([outputdir sep MouseID]);
+save([MouseID '-' SessionID '-ClusterData'],'spikes','fs','cellInfo','labels');
 save([MouseID '-' SessionID '-EventData'],'events');
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -43,9 +44,20 @@ load([MouseID '-' SessionID '-ClusterData']);
 load([MouseID '-' SessionID '-EventData']);
 load([MouseID '-' SessionID '-LickData']);
 
+mkdir('Clusters');
+cd('Clusters');
+
+%%% To only analyze single units: %%%
+
+    clustQ = cell2mat(cellInfo(:,6));
+    goodQID = find(clustQ == 1);
+    cellInfo = cellInfo(goodQID,:);
+        
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 nClust = size(cellInfo,1);
 
-for i = 1%:nClust
+for i = 1:nClust
     spikeMat = getClusterSpikeTimes(spikes.spks{i},events,lickData);
     
     CI = cellInfo(i,:);
@@ -93,11 +105,12 @@ for i = 1%:nClust
     set(gcf,'PaperSize',ppsize);
     set(gcf,'Position',[0 0 ppsize]);
     
-    sgtitle([MouseID '-' SessionID '; Cell ' num2str(CellInfo.cellNum(1)) '; ' CellInfo.unitType{1}],'FontSize',20, 'Color', 'red') 
+    sgtitle([MouseID '-' SessionID '; Cell ' num2str(CellInfo.cellNum(1),'%03.f') '; ' CellInfo.unitType{1}],'FontSize',20, 'Color', 'red') 
     
-   
-    save([MouseID '-' SessionID '-' num2str(CellInfo.cellNum) '-' num2str(CellInfo.unitTypeNum)],'SpikeMat','CellInfo')
+    cd([outputdir sep MouseID sep 'Clusters']);
+    save([MouseID '-' SessionID '-' num2str(CellInfo.cellNum,'%03.f') '-' num2str(CellInfo.unitTypeNum)],'spikeMat','CellInfo')
     
-    print(['Figures\' MouseID '-' SessionID '-' num2str(CellInfo.cellNum) '-' num2str(CellInfo.unitTypeNum)],'-djpeg','-r400');
+    cd([outputdir sep MouseID sep 'Figures']);
+    print([MouseID '-' SessionID '-' num2str(CellInfo.cellNum,'%03.f') '-' num2str(CellInfo.unitTypeNum)],'-djpeg','-r400');
 
 end
