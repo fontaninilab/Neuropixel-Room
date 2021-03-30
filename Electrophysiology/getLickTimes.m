@@ -14,11 +14,12 @@ rightLickTimesTrial = rightLickTimes;
 centralLickTimesCentral = NaN(1,length(centralLickTimes));
 leftLickTimesCentral = NaN(1,length(leftLickTimes));
 rightLickTimesCentral = NaN(1,length(rightLickTimes));
-alignedLickTimes.firstLateral = NaN(4,length(length(trialStartTimes)));
-alignedLickTimes.firstCentral = NaN(2,length(length(trialStartTimes)));
+alignedLickTimes.firstLateral = NaN(4,length(trialStartTimes));
+alignedLickTimes.firstCentral = NaN(2,length(trialStartTimes));
 
-alignedLickTimes.RlickID = 1;
-alignedLickTimes.LlickID = 0;
+%Lick ID's (consistent with BPOD output)
+alignedLickTimes.RlickID = 2;
+alignedLickTimes.LlickID = 1;
 
 %%% For each lick align to trial start event and first central lick %%%
 for i = 1:length(trialStartTimes)-1
@@ -58,7 +59,7 @@ for i = 1:length(trialStartTimes)-1
    elseif ~isempty(rightLicks) && ~isempty(leftLicks) %If both left and right licks ...
        
        [firstlatlick,idx] = min([min(leftLicks) min(rightLicks)]);
-       lateralID = idx - 1;
+       lateralID = idx;
        alignedLickTimes.firstLateral(1,i) = firstlatlick;
        alignedLickTimes.firstLateral(2,i) = firstlatlick - trialStartTimes(i);
        alignedLickTimes.firstLateral(3,i) = firstlatlick - centralLickTimesTrial(trialIDXcentral(1));
@@ -122,7 +123,7 @@ elseif ~isempty(rightLicks) && isempty(leftLicks) %If only right licks...
 elseif ~isempty(rightLicks) && ~isempty(leftLicks) %If both left and right licks ...
 
    [firstlatlick,idx] = min([min(leftLicks) min(rightLicks)]);
-   lateralID = idx - 1;
+   lateralID = idx;
    alignedLickTimes.firstLateral(1,end) = firstlatlick;
    alignedLickTimes.firstLateral(2,end) = firstlatlick - trialStartTimes(end);
    alignedLickTimes.firstLateral(3,end) = firstlatlick - centralLickTimesTrial(trialIDXcentral(1));
