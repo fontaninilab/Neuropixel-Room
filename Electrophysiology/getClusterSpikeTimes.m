@@ -22,7 +22,7 @@ for i = 1:length(trialStartTimes)-1
    spikeTimesTrial(trialIDX) = spikeTimesTrial(trialIDX) - trialStartTimes(i);
    
    if nargin > 2
-       centralAligned(trialIDX) = spikeTimesTrial(trialIDX) - lickData.firstCentral(i);
+       centralAligned(trialIDX) = spikeTimesTrial(trialIDX) - lickData.firstCentral(2,i);
    end
        
     
@@ -33,7 +33,7 @@ trialN(trialIDX) = length(trialStartTimes);
 spikeTimesTrial(trialIDX) = spikeTimesTrial(trialIDX) - trialStartTimes(end);
 
 if nargin > 2
-   centralAligned(trialIDX) = spikeTimesTrial(trialIDX) - lickData.firstCentral(end);
+   centralAligned(trialIDX) = spikeTimesTrial(trialIDX) - lickData.firstCentral(2,end);
 end
 
 spikeMat(1,:) = trialN;
