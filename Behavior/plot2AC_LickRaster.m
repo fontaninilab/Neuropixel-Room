@@ -3,13 +3,11 @@ rootdir = 'D:\MATLAB\Bpod Local\Data';
 sep = '\';
 biasthreshold = 0.05;
  
-
-%filename = 'TDPQF064_Taste2AC_Training4_20201227_090246';
+%Load trial data
 namechunks = strsplit(filename,'_');
 sumData.mouseID = namechunks{1};
 sumData.date = namechunks{4};
 cd([rootdir sep sumData.mouseID sep namechunks{2} '_' namechunks{3} sep 'Session Data']);
-% cd([rootdir sep sumData.mouseID sep namechunks{2} '_' namechunks{3} '_' namechunks{4} '_' namechunks{5} sep 'Session Data']);
 load(filename);
 dataRaw = SessionData;
 
@@ -17,41 +15,33 @@ dataRaw = SessionData;
 %% Extract lick and trial data
 
 %Extract lick events for central and lateral spouts
-idx = 1;
+
 for i = 1:length(dataRaw.TrialSequence)
+    
     if any(strcmp(fieldnames(dataRaw.RawEvents.Trial{1,i}.Events),'AnalogIn1_3'))
-        data.trial(idx).CentralLicks(:) = dataRaw.RawEvents.Trial{1,i}.Events.AnalogIn1_3(1,:);
+        data.trial(i).CentralLicks = dataRaw.RawEvents.Trial{1,i}.Events.AnalogIn1_3(1,:);
+    else data.trial(i).CentralLicks = [];
     end
+    
     if any(strcmp(fieldnames(dataRaw.RawEvents.Trial{1,i}.Events),'AnalogIn1_2'))  
-        data.trial(idx).RightLicks(:) = dataRaw.RawEvents.Trial{1,i}.Events.AnalogIn1_2(1,:);
+        data.trial(i).RightLicks = dataRaw.RawEvents.Trial{1,i}.Events.AnalogIn1_2(1,:);
+    else data.trial(i).RightLicks = [];
     end
+    
     if any(strcmp(fieldnames(dataRaw.RawEvents.Trial{1,i}.Events),'AnalogIn1_1'))
-        data.trial(idx).LeftLicks(:) = dataRaw.RawEvents.Trial{1,i}.Events.AnalogIn1_1(1,:);  
+        data.trial(i).LeftLicks = dataRaw.RawEvents.Trial{1,i}.Events.AnalogIn1_1(1,:);  
+    else data.trial(i).LeftLicks = [];
     end
-   idx = idx+1
+    
+   data.trial(i).TrialSequence = dataRaw.TrialSequence(i); 
+   data.trial(i).original_trialn = i; 
+   data.trial(i).reward = ~isnan(dataRaw.RawEvents.Trial{1,i}.States.reward(1,1)); 
 end 
 
-%Extract trial ID and reward
-% % data.TrialSequence = dataRaw.TrialSequence;
-reward = zeros(1,dataRaw.nTrials);
 
-for i = 1:dataRaw.nTrials
-    %data.reward(i)= ~isnan(dataRaw.RawEvents.Trial{1,i}.States.reward(1,1)); 
-    reward(i) = ~isnan(dataRaw.RawEvents.Trial{1,i}.States.reward(1,1)); 
-end
-
-%idx = 1;
-for i = 1:length(data.trial)
-    
-    data.trial(i).TrialSequence = dataRaw.TrialSequence(i);
-    data.trial(i).reward = reward(i);
-    data.trial(i).original_trialn = i;
-   
-    %idx = idx+1;
-end
-%% delete lateral licks before the start of "WaitForLateralLicks"
+%% delete lateral licks before the start of "WaitForLateralLicks" (lateral) or "WaitForLicks" (central)
  
-a = []; b = [];
+a = []; b = []; c = [];
  
 %Left licks
 for i = 1:length(data.trial)
@@ -70,6 +60,16 @@ for i = 1:length(data.trial)
      else
      end
 end
+
+for i = 1:length(data.trial)
+     if ~isempty(data.trial(i).CentralLicks(:))
+         c = find(data.trial(i).CentralLicks(1:end) < dataRaw.RawEvents.Trial{1,i}.States.WaitForLicks(1,1));      
+         data.trial(i).CentralLicks(c) = [];
+     else   
+     end 
+end
+
+fprintf('Removed %d lateral licks and %d central licks\n',[length(a)+length(b),length(c)]);
 %% find the direction of the first lateral lick for each trial; left-1; right-2
  
 idx = 1;
@@ -90,7 +90,7 @@ for i = 1:length(dataRaw.TrialSequence)
 end
 %% list trials with no lateral licks and remove
 
-j = 1;
+count = 1;
 lateralmiss = [];
 for i = 1:length(data.trial)
     
@@ -98,14 +98,16 @@ for i = 1:length(data.trial)
     B = isempty(data.trial(i).RightLicks(:));
     
     if A && B
-        lateralmiss(j) = i;
-        j = j + 1;
+        lateralmiss(count) = i;
+        count = count + 1;
     end
 end
 
 % remove these trials from trial struct
 c = lateralmiss; % can add other problem trials in the future
 data.trial(c) = [];
+
+fprintf('Removed %d trials with no lateral licks\n',length(c));
 
 %% bias calculation are they making more errors in one direction than the other
 
@@ -140,38 +142,35 @@ else
     fprintf('No lick bias\n');
 end
 
-%% lick raster plot
+%% %%%%%%%%%%%%%%%%%%%
+%   Lick raster plot
+%%%%%%%%%%%%%%%%%%%%%%
 
 figure; 
 for i = 1:length(data.trial)  
     %trial type (L or R)
      if data.trial(i).TrialSequence == 1
-        p1 = plot([0 0],[i i],'ob', 'MarkerSize',3);hold on;
+        p1 = scatter(0,i,'c', 'filled');hold on;
      elseif data.trial(i).TrialSequence == 2
-        p2 = plot([0 0],[i i],'oc', 'MarkerSize',3);hold on;
+        p2 = scatter(0,i,'m', 'filled');hold on;
      end
  
-   %central&lacteral licks
-    for j = 1:length(data.trial(i).CentralLicks)
-         p4 = plot([data.trial(i).CentralLicks(j) data.trial(i).CentralLicks(j)],[i i+0.9],'k');  
-    end;hold on
-       
-    for j = 1:length(data.trial(i).LeftLicks)
-         p5 = plot([data.trial(i).LeftLicks(j) data.trial(i).LeftLicks(j)],[i i+0.9],'b');  
-    end;hold on
-    
-    for j = 1:length(data.trial(i).RightLicks)
-         p6 = plot([data.trial(i).RightLicks(j) data.trial(i).RightLicks(j)],[i i+0.9],'c');  
-    end;hold on
-    
-     
+    %Plot licks
+    p4 = plot([data.trial(i).CentralLicks;data.trial(i).CentralLicks] , [repmat(i-0.4,1,size(data.trial(i).CentralLicks,2));repmat(i+0.4,1,size(data.trial(i).CentralLicks,2))],'k');
+
+    p5 =  plot([data.trial(i).LeftLicks;data.trial(i).LeftLicks] , [repmat(i-0.4,1,size(data.trial(i).LeftLicks,2));repmat(i+0.4,1,size(data.trial(i).LeftLicks,2))],'b');
+    hold on;
+
+    p6 = plot([data.trial(i).RightLicks;data.trial(i).RightLicks] , [repmat(i-0.4,1,size(data.trial(i).RightLicks,2));repmat(i+0.4,1,size(data.trial(i).RightLicks,2))],'r');
+    hold on;
+
+
     %reward/no reward
     if data.trial(i).reward == 1
-        p7 = plot([8 8],[i i],'og', 'MarkerSize',3);hold on;
+        p7 = scatter(8,i,'g','filled');hold on;
     else
-        p8 = plot([8 8],[i i],'or', 'MarkerSize',3);hold on;
+        p8 = scatter(8,i,'r','filled');hold on;
     end
-
 
        
   
@@ -179,9 +178,9 @@ end
 
 set(gca,'TickDir','out','FontSize',18,'XLim',[0 8],'YLim',[0 length(data.trial)+5])
 xlabel('Time(s)','Interpreter','latex','FontSize',20)
-ylabel('# Trials','Interpreter','latex','FontSize',20)
+ylabel('Trial','Interpreter','latex','FontSize',20)
 title([sumData.mouseID '-' sumData.date ' - Lick Raster'],'Interpreter','latex','FontSize',20) 
-legend([p1,p2,p4,p5,p6,p7,p8],{'Left Trial','Right Trial','Central Licks','Left Licks','Right Licks','reward','no reward'},'location','NorthwestOutside')  
+legend([p1(1),p2(1),p4(1),p5(1),p6(1),p7(1),p8(1)],{'Left Trial','Right Trial','Central Licks','Left Licks','Right Licks','reward','no reward'},'location','NorthwestOutside')  
    
   
 set(gcf,'units','normalized','outerposition',[0 0 1 1]);
