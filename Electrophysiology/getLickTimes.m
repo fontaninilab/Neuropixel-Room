@@ -1,6 +1,27 @@
 function alignedLickTimes = getLickTimes(events,fig)
+% Extracts and aligns lick times to trial start times/first central lick
+%
+% INPUTS
+%  events: struct with event data (from getSpikeEventsKS.m)
+%          .MouseID = Mouse ID
+%          .SessionID = Session ID
+%          .lickEv = struct with lick event indices
+%          .trialStartEv = trial start event indices
+%          .fsEv = nidaq sampling rate
+%   fig: (any value) optional input to produce simple lick raster
+%
+% OUTPUTS
+%  alignedLickTimes: struct with aligned lick times
+%                   .firstCentral = 3xN array with, trial #; lick times aligned to session start, trial start
+%                   .firstLateral = 5xN array, trial #; lick times aligned to session start, trial start, first central; lick ID
+%                   .central = 4xM array, trial #; lick times aligned to session start, trial start, first central
+%                   .left = 4xL array, trial #; lick times aligned to session start, trial start, first central
+%                   .right = 4xR array, trial #; lick times aligned to session start, trial start, first central
+%                   .RlickID = ID # for first right lick (.firstLateral row 5)
+%                   .LlickID = ID # for first left lick (.firstLateral row 5)
+%                   .labels = 4x1 cell labels for rows of lick times
 
-
+%Convert timestamps to time (in seconds)
 trialStartTimes = events.trialStartEv./events.fsEv; 
 centralLickTimes = events.lickEv.central./events.fsEv;
 leftLickTimes = events.lickEv.left./events.fsEv;
@@ -14,8 +35,8 @@ rightLickTimesTrial = rightLickTimes;
 centralLickTimesCentral = NaN(1,length(centralLickTimes));
 leftLickTimesCentral = NaN(1,length(leftLickTimes));
 rightLickTimesCentral = NaN(1,length(rightLickTimes));
-alignedLickTimes.firstLateral = NaN(4,length(trialStartTimes));
-alignedLickTimes.firstCentral = NaN(2,length(trialStartTimes));
+alignedLickTimes.firstLateral = NaN(5,length(trialStartTimes));
+alignedLickTimes.firstCentral = NaN(3,length(trialStartTimes));
 
 %Lick ID's (consistent with BPOD output)
 alignedLickTimes.RlickID = 2;
@@ -96,7 +117,7 @@ for i = 1:length(trialStartTimes)
            alignedLickTimes.firstLateral(5,i) = lateralID;
 
 
-       else %If no licks...
+       else %If no licks...(this might be redundant due to pre-allocation)
            alignedLickTimes.firstLateral(1,i) = NaN;
            alignedLickTimes.firstLateral(2,i) = NaN;
            alignedLickTimes.firstLateral(3,i) = NaN;
@@ -104,13 +125,8 @@ for i = 1:length(trialStartTimes)
            alignedLickTimes.firstLateral(5,i) = NaN;
        end
 
-
-
-
    end
-   
-   
-   
+     
 end
 
 
@@ -131,7 +147,7 @@ alignedLickTimes.right(2,:) = rightLickTimes;
 alignedLickTimes.right(3,:) = rightLickTimesTrial;
 alignedLickTimes.right(4,:) = rightLickTimesCentral;
 
-alignedLickTimes.labels = {'trial N';'lick times, recording start';'lick times, trial start';'lick times, first central'};
+alignedLickTimes.labels = {'trial #';'lick times, recording start';'lick times, trial start';'lick times, first central'};
 
 
 %%% Plot lick raster %%%
