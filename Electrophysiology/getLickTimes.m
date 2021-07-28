@@ -22,127 +22,96 @@ alignedLickTimes.RlickID = 2;
 alignedLickTimes.LlickID = 1;
 
 %%% For each lick align to trial start event and first central lick %%%
-for i = 1:length(trialStartTimes)-1
+for i = 1:length(trialStartTimes)
     
-   trialIDXcentral = find(centralLickTimes >= trialStartTimes(i) & centralLickTimes < trialStartTimes(i+1));
-   trialNc(trialIDXcentral) = i;
-   centralLickTimesTrial(trialIDXcentral) = centralLickTimesTrial(trialIDXcentral) - trialStartTimes(i);% Align to trial start time
-   centralLickTimesCentral(trialIDXcentral) = centralLickTimesTrial(trialIDXcentral) - centralLickTimesTrial(trialIDXcentral(1));
-       
-   trialIDXleft = find(leftLickTimes >= trialStartTimes(i) & leftLickTimes < trialStartTimes(i+1));
-   trialNl(trialIDXleft) = i;
-   leftLickTimesTrial(trialIDXleft) = leftLickTimesTrial(trialIDXleft) - trialStartTimes(i);% Align to trial start time
-   leftLickTimesCentral(trialIDXleft) = leftLickTimesTrial(trialIDXleft) - centralLickTimesTrial(trialIDXcentral(1)); %Align to first central lick per trial
+    if i < length(trialStartTimes)        
+         trialIDXcentral = find(centralLickTimes >= trialStartTimes(i) & centralLickTimes < trialStartTimes(i+1)); %Find lick times for trial i   
+    else    
+        trialIDXcentral = find(centralLickTimes >= trialStartTimes(end));
+    end
    
-   trialIDXright = find(rightLickTimes >= trialStartTimes(i) & rightLickTimes < trialStartTimes(i+1));
-   trialNr(trialIDXright) = i;
-   rightLickTimesTrial(trialIDXright) = rightLickTimesTrial(trialIDXright) - trialStartTimes(i);% Align to trial start time
-   rightLickTimesCentral(trialIDXright) = rightLickTimesTrial(trialIDXright) - centralLickTimesTrial(trialIDXcentral(1)); %Align to first central lick per trial
-   
-   %%% Find first lateral lick per trial %%%
-   rightLicks = rightLickTimes(trialIDXright);
-   leftLicks = leftLickTimes(trialIDXleft);
-   if isempty(rightLicks) && ~isempty(leftLicks) %If only left licks...
-       lateralID = alignedLickTimes.LlickID;
-       alignedLickTimes.firstLateral(1,i) = leftLicks(1);
-       alignedLickTimes.firstLateral(2,i) = leftLickTimes(trialIDXleft(1)) - trialStartTimes(i);
-       alignedLickTimes.firstLateral(3,i) = leftLickTimesTrial(trialIDXleft(1)) - centralLickTimesTrial(trialIDXcentral(1));
-       alignedLickTimes.firstLateral(4,i) = lateralID;
+   if ~isempty(trialIDXcentral)
        
-   elseif ~isempty(rightLicks) && isempty(leftLicks) %If only right licks...
-       lateralID = alignedLickTimes.RlickID;
-       alignedLickTimes.firstLateral(1,i) = rightLicks(1);
-       alignedLickTimes.firstLateral(2,i) = rightLickTimes(trialIDXright(1)) - trialStartTimes(i);
-       alignedLickTimes.firstLateral(3,i) = rightLickTimesTrial(trialIDXright(1)) - centralLickTimesTrial(trialIDXcentral(1));
-       alignedLickTimes.firstLateral(4,i) = lateralID;
+       %%% Central lick times for trial i %%%
+       trialNc(trialIDXcentral) = i; %Populate vector with trial N's
+       centralLickTimesTrial(trialIDXcentral) = centralLickTimesTrial(trialIDXcentral) - trialStartTimes(i);% Align to trial start time
+       centralLickTimesCentral(trialIDXcentral) = centralLickTimesTrial(trialIDXcentral) - centralLickTimesTrial(trialIDXcentral(1)); %Align to first central lick
        
-   elseif ~isempty(rightLicks) && ~isempty(leftLicks) %If both left and right licks ...
-       
-       [firstlatlick,idx] = min([min(leftLicks) min(rightLicks)]);
-       lateralID = idx;
-       alignedLickTimes.firstLateral(1,i) = firstlatlick;
-       alignedLickTimes.firstLateral(2,i) = firstlatlick - trialStartTimes(i);
-       alignedLickTimes.firstLateral(3,i) = firstlatlick - centralLickTimesTrial(trialIDXcentral(1));
-       alignedLickTimes.firstLateral(4,i) = lateralID;
-       
-   
-   else %If no licks...
-       alignedLickTimes.firstLateral(1,i) = NaN;
-       alignedLickTimes.firstLateral(2,i) = NaN;
-       alignedLickTimes.firstLateral(3,i) = NaN;
-       alignedLickTimes.firstLateral(4,i) = NaN;
-   end
+       % Extract time of first central lick for trial i
+       alignedLickTimes.firstCentral(1,i) = i;
+       alignedLickTimes.firstCentral(2,i) = centralLickTimes(trialIDXcentral(1)); %Raw lick time relative to session start
+       alignedLickTimes.firstCentral(3,i) = centralLickTimesTrial(trialIDXcentral(1)); %Raw lick time relative to trial start
         
-   
-   
-   %%% Extract time of first central lick %%%
-   alignedLickTimes.firstCentral(1,i) = centralLickTimes(trialIDXcentral(1)); %Raw lick time relative to session start
-   alignedLickTimes.firstCentral(2,i) = centralLickTimesTrial(trialIDXcentral(1));
-   
+       %%% Left lick times for trial i %%%
+       if i < length(trialStartTimes)
+           trialIDXleft = find(leftLickTimes >= trialStartTimes(i) & leftLickTimes < trialStartTimes(i+1));%Find lick times for trial i
+       else
+           trialIDXleft = find(leftLickTimes >= trialStartTimes(end));
+       end
+       
+       trialNl(trialIDXleft) = i;%Populate vector with trial N's
+       leftLickTimesTrial(trialIDXleft) = leftLickTimesTrial(trialIDXleft) - trialStartTimes(i);% Align to trial start time
+       leftLickTimesCentral(trialIDXleft) = leftLickTimesTrial(trialIDXleft) - centralLickTimesTrial(trialIDXcentral(1)); %Align to first central lick 
+
+       %%% Right lick times for trial i %%%
+       if i < length(trialStartTimes)
+           trialIDXright = find(rightLickTimes >= trialStartTimes(i) & rightLickTimes < trialStartTimes(i+1));%Find lick times for trial i
+       else
+           trialIDXright = find(rightLickTimes >= trialStartTimes(end));
+       end
+       
+       trialNr(trialIDXright) = i;%Populate vector with trial N's
+       rightLickTimesTrial(trialIDXright) = rightLickTimesTrial(trialIDXright) - trialStartTimes(i);% Align to trial start time
+       rightLickTimesCentral(trialIDXright) = rightLickTimesTrial(trialIDXright) - centralLickTimesTrial(trialIDXcentral(1)); %Align to first central lick 
+
+       %%% Find first lateral lick per trial %%%
+       rightLicks = rightLickTimes(trialIDXright);
+       leftLicks = leftLickTimes(trialIDXleft);
+       if isempty(rightLicks) && ~isempty(leftLicks) %If only left licks...
+           
+           lateralID = alignedLickTimes.LlickID;
+           alignedLickTimes.firstLateral(1,i) = i;
+           alignedLickTimes.firstLateral(2,i) = leftLicks(1);
+           alignedLickTimes.firstLateral(3,i) = leftLickTimes(trialIDXleft(1)) - trialStartTimes(i);
+           alignedLickTimes.firstLateral(4,i) = leftLickTimesTrial(trialIDXleft(1)) - centralLickTimesTrial(trialIDXcentral(1));
+           alignedLickTimes.firstLateral(5,i) = lateralID;
+
+       elseif ~isempty(rightLicks) && isempty(leftLicks) %If only right licks...
+           
+           lateralID = alignedLickTimes.RlickID;
+           alignedLickTimes.firstLateral(1,i) = i;
+           alignedLickTimes.firstLateral(2,i) = rightLicks(1);
+           alignedLickTimes.firstLateral(3,i) = rightLickTimes(trialIDXright(1)) - trialStartTimes(i);
+           alignedLickTimes.firstLateral(4,i) = rightLickTimesTrial(trialIDXright(1)) - centralLickTimesTrial(trialIDXcentral(1));
+           alignedLickTimes.firstLateral(5,i) = lateralID;
+
+       elseif ~isempty(rightLicks) && ~isempty(leftLicks) %If both left and right licks ...
+
+           [firstlatlick,idx] = min([min(leftLicks) min(rightLicks)]);
+           lateralID = idx;
+           alignedLickTimes.firstLateral(1,i) = i;
+           alignedLickTimes.firstLateral(2,i) = firstlatlick;
+           alignedLickTimes.firstLateral(3,i) = firstlatlick - trialStartTimes(i);
+           alignedLickTimes.firstLateral(4,i) = firstlatlick - centralLickTimesTrial(trialIDXcentral(1));
+           alignedLickTimes.firstLateral(5,i) = lateralID;
+
+
+       else %If no licks...
+           alignedLickTimes.firstLateral(1,i) = NaN;
+           alignedLickTimes.firstLateral(2,i) = NaN;
+           alignedLickTimes.firstLateral(3,i) = NaN;
+           alignedLickTimes.firstLateral(4,i) = NaN;
+           alignedLickTimes.firstLateral(5,i) = NaN;
+       end
+
+
+
+
+   end
    
    
    
 end
-
-%%% Repeat above, but for last trial %%%
-trialIDXcentral = find(centralLickTimes >= trialStartTimes(end));
-trialNc(trialIDXcentral) = length(trialStartTimes);
-centralLickTimesTrial(trialIDXcentral) = centralLickTimesTrial(trialIDXcentral) - trialStartTimes(end);
-centralLickTimesCentral(trialIDXcentral) = centralLickTimesCentral(trialIDXcentral) - centralLickTimesTrial(trialIDXcentral(1));
-
-alignedLickTimes.firstCentral(1,length(trialStartTimes)) = centralLickTimes(trialIDXcentral(1));
-alignedLickTimes.firstCentral(2,length(trialStartTimes)) = centralLickTimesTrial(trialIDXcentral(1));
-
-trialIDXleft = find(leftLickTimes >= trialStartTimes(end));
-trialNl(trialIDXleft) = length(trialStartTimes);
-leftLickTimesTrial(trialIDXleft) = leftLickTimesTrial(trialIDXleft) - trialStartTimes(end);
-leftLickTimesCentral(trialIDXleft) = leftLickTimesTrial(trialIDXleft) - centralLickTimesTrial(trialIDXcentral(1)); %Align to first central lick per trial
-
-trialIDXright = find(rightLickTimes >= trialStartTimes(end));
-trialNr(trialIDXright) = length(trialStartTimes);
-leftLickTimesTrial(trialIDXright) = leftLickTimesTrial(trialIDXright) - trialStartTimes(end);
-rightLickTimesCentral(trialIDXright) = rightLickTimesTrial(trialIDXright) - centralLickTimesTrial(trialIDXcentral(1));
-
-
-rightLicks = rightLickTimes(trialIDXright);
-leftLicks = leftLickTimes(trialIDXleft);
-if isempty(rightLicks) && ~isempty(leftLicks) %If only left licks...
-   lateralID = alignedLickTimes.LlickID;
-   alignedLickTimes.firstLateral(1,end) = leftLicks(1);
-   alignedLickTimes.firstLateral(2,end) = leftLickTimes(trialIDXleft(1)) - trialStartTimes(end);
-   alignedLickTimes.firstLateral(3,end) = leftLickTimesTrial(trialIDXleft(1)) - centralLickTimesTrial(trialIDXcentral(1));
-   alignedLickTimes.firstLateral(4,end) = lateralID;
-
-elseif ~isempty(rightLicks) && isempty(leftLicks) %If only right licks...
-   lateralID = alignedLickTimes.RlickID;
-   alignedLickTimes.firstLateral(1,end) = rightLicks(1);
-   alignedLickTimes.firstLateral(2,end) = rightLickTimes(trialIDXright(1)) - trialStartTimes(end);
-   alignedLickTimes.firstLateral(3,end) = rightLickTimesTrial(trialIDXright(1)) - centralLickTimesTrial(trialIDXcentral(1));
-   alignedLickTimes.firstLateral(4,end) = lateralID;
-
-elseif ~isempty(rightLicks) && ~isempty(leftLicks) %If both left and right licks ...
-
-   [firstlatlick,idx] = min([min(leftLicks) min(rightLicks)]);
-   lateralID = idx;
-   alignedLickTimes.firstLateral(1,end) = firstlatlick;
-   alignedLickTimes.firstLateral(2,end) = firstlatlick - trialStartTimes(end);
-   alignedLickTimes.firstLateral(3,end) = firstlatlick - centralLickTimesTrial(trialIDXcentral(1));
-   alignedLickTimes.firstLateral(4,end) = lateralID;
-
-
-else %If no licks...
-   alignedLickTimes.firstLateral(1,end) = NaN;
-   alignedLickTimes.firstLateral(2,end) = NaN;
-   alignedLickTimes.firstLateral(3,end) = NaN;
-   alignedLickTimes.firstLateral(4,end) = NaN;
-end
-
-
-
-alignedLickTimes.firstCentral(1,end) = centralLickTimes(trialIDXcentral(1)); %Raw lick time relative to session start
-alignedLickTimes.firstCentral(2,end) = centralLickTimesTrial(trialIDXcentral(1));
-
-
 
 
 %%% Assign lick times to output structure %%%
@@ -161,6 +130,8 @@ alignedLickTimes.right(1,:) = trialNr;
 alignedLickTimes.right(2,:) = rightLickTimes;
 alignedLickTimes.right(3,:) = rightLickTimesTrial;
 alignedLickTimes.right(4,:) = rightLickTimesCentral;
+
+alignedLickTimes.labels = {'trial N';'lick times, recording start';'lick times, trial start';'lick times, first central'};
 
 
 %%% Plot lick raster %%%
