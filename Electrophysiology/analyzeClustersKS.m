@@ -2,13 +2,13 @@ rootdir = 'D:\Neuropixel Data\';
 sep = '\';
 outputdir = 'D:\Spikes\';
 
-MouseID = 'TDPQF065';
+MouseID = 'TDPWF094';
 SessionID = 'Session1';
 mkdir(outputdir,MouseID);
 
 
-%myPath = [rootdir MouseID sep MouseID '_' SessionID '_g0']; %Folder containing nidaq data (parent folder to imec0 folder)
-myPath = 'D:\Neuropixel Data\TDPQF065\TDPQF065_Session1_201230_g0'; 
+myPath = [rootdir MouseID sep MouseID '_' SessionID '_g0'] %Folder containing nidaq data (parent folder to imec0 folder)
+%myPath = 'D:\Neuropixel Data\TDPWF094\TDPWF094_Session1_g0'; 
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  Extract spikes and events for a given session
@@ -47,18 +47,21 @@ load([MouseID '-' SessionID '-LickData']);
 mkdir('Clusters');
 cd('Clusters');
 
+spikeTimes = spikes.spks;
+
 %%% To only analyze single units: %%%
 
     clustQ = cell2mat(cellInfo(:,6));
     goodQID = find(clustQ == 1);
     cellInfo = cellInfo(goodQID,:);
+    spikeTimes = spikeTimes(goodQID);
         
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-nClust = size(cellInfo,1);
+nClust = length(spikeTimes);
 
 for i = 1:nClust
-    spikeMat = getClusterSpikeTimes(spikes.spks{i},events,lickData);
+    spikeMat = getClusterSpikeTimes(spikeTimes{i},events,lickData);
     
     CI = cellInfo(i,:);
     CellInfo = cell2table(CI,'VariableNames',labels);
@@ -107,10 +110,10 @@ for i = 1:nClust
     
     sgtitle([MouseID '-' SessionID '; Cell ' num2str(CellInfo.cellNum(1),'%03.f') '; ' CellInfo.unitType{1}],'FontSize',20, 'Color', 'red') 
     
-    cd([outputdir sep MouseID sep 'Clusters']);
+    cd([outputdir sep MouseID sep 'CAR' sep 'Clusters']);
     save([MouseID '-' SessionID '-' num2str(CellInfo.cellNum,'%03.f') '-' num2str(CellInfo.unitTypeNum)],'spikeMat','CellInfo')
     
-    cd([outputdir sep MouseID sep 'Figures']);
+    cd([outputdir sep MouseID sep 'CAR' sep 'Figures']);
     print([MouseID '-' SessionID '-' num2str(CellInfo.cellNum,'%03.f') '-' num2str(CellInfo.unitTypeNum)],'-djpeg','-r400');
 
 end
