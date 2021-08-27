@@ -117,7 +117,7 @@ end
 
 
 function central_forward(btn1)
-t_ZaberMotor_test(2,21);
+t_ZaberMotor_test(2,24);
 end
 function central_back(btn2)
 t_ZaberMotor_test(2,0);
@@ -126,7 +126,7 @@ function lateral_forward(btn3)
 t_ZaberMotor_test(1,0);
 end
 function lateral_back(btn4)
-t_ZaberMotor_test(1,16);
+t_ZaberMotor_test(1,20);
 end
 function Aspiration_up(btn5)
 t_ZaberMotor_test(3,0);
@@ -135,7 +135,7 @@ function Aspiration_down(btn6)
 t_ZaberMotor_test(3,10);
 end
 function CentralDrop(btnIDX,valveID)
-valveDuration = 0.35; %Duration valve is open in seconds
+valveDuration = 0.25; %Duration valve is open in seconds
 OverrideValveModule(valveID,valveDuration);
 end
 
