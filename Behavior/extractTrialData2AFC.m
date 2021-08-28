@@ -42,7 +42,10 @@ for i = 1:nTrials
     
    data(i).TrialSequence = SessionData.TrialSequence(i);   
    data(i).reward = ~isnan(SessionData.RawEvents.Trial{1,i}.States.reward(1,1));
-   data(i).ValveSequence = SessionData.ValveSequence(i);
+   
+   if exist('SessionData.ValveSequence','var')
+        data(i).ValveSequence = SessionData.ValveSequence(i);
+   end
    
    %Time window of sampling for central licks
     if ~isempty(data(i).CentralLicks)
