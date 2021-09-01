@@ -1,5 +1,7 @@
 function plot2AC_LickRaster
-
+% Plot raster for all lick trials for 2AFC task (training only) from BPOD format. 
+% Running this code will open file dialog box to select data file.
+% Function will save figure and summary stats (lick bias, # trials removed)
 
 rootdir = 'D:\MATLAB\Bpod Local\Data';
 sep = '\';
@@ -14,35 +16,11 @@ sumData.mouseID = namechunks{1};
 sumData.date = namechunks{4};
 cd([rootdir sep sumData.mouseID sep namechunks{2} '_' namechunks{3} sep 'Session Data']);
 load(filename);
-%dataRaw = SessionData;
 
 
 %% Extract lick and trial data
 
 data = extractTrialData2AFC(SessionData);
-%Extract lick events for central and lateral spouts
-% % 
-% % for i = 1:length(dataRaw.TrialSequence)
-% %     
-% %     if any(strcmp(fieldnames(dataRaw.RawEvents.Trial{1,i}.Events),'AnalogIn1_3'))
-% %         data.trial(i).CentralLicks = dataRaw.RawEvents.Trial{1,i}.Events.AnalogIn1_3(1,:);
-% %     else data.trial(i).CentralLicks = [];
-% %     end
-% %     
-% %     if any(strcmp(fieldnames(dataRaw.RawEvents.Trial{1,i}.Events),'AnalogIn1_2'))  
-% %         data.trial(i).RightLicks = dataRaw.RawEvents.Trial{1,i}.Events.AnalogIn1_2(1,:);
-% %     else data.trial(i).RightLicks = [];
-% %     end
-% %     
-% %     if any(strcmp(fieldnames(dataRaw.RawEvents.Trial{1,i}.Events),'AnalogIn1_1'))
-% %         data.trial(i).LeftLicks = dataRaw.RawEvents.Trial{1,i}.Events.AnalogIn1_1(1,:);  
-% %     else data.trial(i).LeftLicks = [];
-% %     end
-% %     
-% %    data.trial(i).TrialSequence = dataRaw.TrialSequence(i); 
-% %    data.trial(i).original_trialn = i; 
-% %    data.trial(i).reward = ~isnan(dataRaw.RawEvents.Trial{1,i}.States.reward(1,1)); 
-% % end 
 
 
 %% delete lateral licks before the start of "WaitForLateralLicks" (lateral) or "WaitForLicks" (central)
@@ -76,6 +54,9 @@ for i = 1:length(data)
 end
 
 fprintf('Removed %d lateral licks and %d central licks\n',[aCount+bCount,cCount]);
+sumData.Rlicksremoved = bCount;
+sumData.Llicksremoved = aCount;
+sumData.Clicksremoved = cCount;
 
 
 %% list trials with no lateral licks and remove
@@ -146,11 +127,14 @@ sumData.bias = Lerror/Lcount - Rerror/Rcount;
 %Display bias
 if sumData.bias > biasthreshold
     fprintf('Right lick bias: %4.2f\n',sumData.bias);
+    sumData.biasdir = 'R';
     
 elseif sumData.bias < -biasthreshold
     fprintf('Left lick bias: %4.2f\n',sumData.bias);
+    sumData.biasdir = 'L';
 else
     fprintf('No lick bias\n');
+    sumData.biasdir = 'none';
 end
 
 %% %%%%%%%%%%%%%%%%%%%
@@ -188,10 +172,10 @@ for i = 1:length(data)
 
     %reward/no reward
     if data(i).reward == 1
-        p6 = scatter(14,i,'g','filled');hold on;
+        p6 = scatter(0.5,i,'g','filled');hold on;
         p(6) = p6(1);
     else
-        p7 = scatter(14,i,'r','filled');hold on;
+        p7 = scatter(0.5,i,'r','filled');hold on;
         p(7) = p7(1);
     end
 
@@ -199,11 +183,21 @@ for i = 1:length(data)
   
 end
 
-set(gca,'TickDir','out','FontSize',18,'XLim',[0 14],'YLim',[0 length(data)+5])
+set(gca,'TickDir','out','FontSize',18,'YLim',[0 length(data)+2])
 xlabel('Time(s)','Interpreter','latex','FontSize',20)
 ylabel('Trial','Interpreter','latex','FontSize',20)
 title([sumData.mouseID '-' sumData.date ' - Lick Raster'],'Interpreter','latex','FontSize',20) 
 leg = legendlabels; leg(p == 0) = []; legend(p(p>0),leg,'location','NorthwestOutside')
 
   
-set(gcf,'units','normalized','outerposition',[0 0 1 1]);
+ppsize = [1400 700];
+set(gcf,'PaperPositionMode','auto');         
+set(gcf,'PaperOrientation','landscape');
+set(gcf,'PaperUnits','points');
+set(gcf,'PaperSize',ppsize);
+set(gcf,'Position',[0 0 ppsize]);
+
+
+print([sumData.mouseID '-' sumData.date '-LickRaster'],'-r400','-dpdf');
+save([sumData.mouseID '-' sumData.date '-SummaryData'],'data','sumData');
+
