@@ -1,6 +1,6 @@
 
 
-function Taste2AC      
+function Taste2AC_right_side_only      
 global BpodSystem
 
 %% Setup (runs once before the first trial)
@@ -38,23 +38,19 @@ A = BpodAnalogIn('COM6');
 
 A.nActiveChannels = 8;
 A.InputRange = {'-5V:5V',  '-5V:5V',  '-5V:5V',  '-5V:5V',  '-10V:10V', '-10V:10V',  '-10V:10V',  '-10V:10V'};
-A.Thresholds = [-0.5 -0.5 -0.5 2 2 2 2 2];
-A.ResetVoltages = [-0.2 -0.2 -0.2 1.5 1.5 1.5 1.5 1.5];
+
+%---Thresholds for electrical detectors---
+%A.Thresholds = [-0.5 -0.5 -0.5 2 2 2 2 2];
+%A.ResetVoltages = [-0.2 -0.2 -0.2 1.5 1.5 1.5 1.5 1.5];
+%-----------------------------------------
+
+%---Thresholds for optical detectors---
+A.Thresholds = [1 1 1 2 2 2 2 2];
+A.ResetVoltages = [0.1 0.1 0.1 1.5 1.5 1.5 1.5 1.5]; %Should be at or slightly above baseline (check oscilloscope)
+%--------------------------------------
+
 A.SMeventsEnabled = [1 1 1 0 0 0 0 0];
 A.startReportingEvents();
-% For sound generation
-% SF = 50000;
-% W = BpodWavePlayer('COM4');
-% W.SamplingRate = SF;
-% LeftSound = GenerateSineWave(SF, S.GUI.SoundFreqLeft, S.GUI.SoundDuration);
-% RightSound = GenerateSineWave(SF, S.GUI.SoundFreqRight, S.GUI.SoundDuration);
-% W.loadWaveform(1, LeftSound);
-% W.loadWaveform(2, RightSound);
-% LoadSerialMessages('WavePlayer1', {['P' 3 0], ['P' 3 1], ['P' 3 2]});
-
-% LightPulseDuration = 10;
-% LightWaveform = ones(1, 10*SF)*5;
-% W.loadWaveform(2, LightWaveform);
 
 % Setting the seriers messages for opening the odor valve
 % valve 1 is the vacumm; valve 2 is odor 1; valve 3 is odor 2
@@ -84,12 +80,9 @@ disp(['Trial# ' num2str(currentTrial) ' TrialType: ' num2str(TrialTypes(currentT
     S = BpodParameterGUI('sync', S); % Sync parameters with BpodParameterGUI plugin
     R = GetValveTimes(S.GUI.RewardAmount, [1 2]); LeftValveTime = R(1); RightValveTime = R(2); % Update reward amounts
      
-%  valveID = 1;
   valveID = 15;
-                leftAction = 'Timeout'; rightAction = 'reward';
-%                  leftAction = 'reward'; rightAction = 'Timeout';
-%                 ValveCode = 1; ValveTime = LeftValveTime; 
-                ValveCode = 2;ValveTime = RightValveTime; 
+  leftAction = 'Timeout'; rightAction = 'reward'; 
+  ValveCode = 2;ValveTime = RightValveTime; 
                 
                 
     AspValveTime = GetValveTimes(S.GUI.AspirationTime,3); 

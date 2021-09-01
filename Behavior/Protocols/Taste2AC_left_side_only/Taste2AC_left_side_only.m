@@ -1,6 +1,6 @@
 
 
-function Taste2AC      
+function Taste2AC_left_side_only      
 global BpodSystem
 
 %% Setup (runs once before the first trial)
@@ -8,7 +8,7 @@ MaxTrials = 10000; % Set to some sane value, for preallocation
 
 TrialTypes = ceil(rand(1,MaxTrials)*2);
 
-%--- Define parameters and trial structure
+%---Define parameters and trial structure---
 S = BpodSystem.ProtocolSettings; % Loads settings file chosen in launch manager into current workspace as a struct called 'S'
 if isempty(fieldnames(S))  % If chosen settings file was an empty struct, populate struct with default settings
     % Define default settings here as fields of S (i.e S.InitialDelay = 3.2)
@@ -37,24 +37,20 @@ end
 A = BpodAnalogIn('COM6');
 
 A.nActiveChannels = 8;
-A.InputRange = {'-5V:5V',  '-5V:5V',  '-5V:5V',  '-5V:5V',  '-10V:10V', '-10V:10V',  '-10V:10V',  '-10V:10V'};
-A.Thresholds = [-0.5 -0.5 -0.5 2 2 2 2 2];
-A.ResetVoltages = [-0.2 -0.2 -0.2 1.5 1.5 1.5 1.5 1.5];
+A.InputRange = {'-2.5V:2.5V',  '-2.5V:2.5V',  '-2.5V:2.5V',  '-5V:5V',  '-10V:10V', '-10V:10V',  '-10V:10V',  '-10V:10V'};
+
+%---Thresholds for electrical detectors---
+%A.Thresholds = [-0.5 -0.5 -0.5 2 2 2 2 2];
+%A.ResetVoltages = [-0.2 -0.2 -0.2 1.5 1.5 1.5 1.5 1.5];
+%-----------------------------------------
+
+%---Thresholds for optical detectors---
+A.Thresholds = [1 1 1 2 2 2 2 2];
+A.ResetVoltages = [0.1 0.1 0.1 1.5 1.5 1.5 1.5 1.5]; %Should be at or slightly above baseline (check oscilloscope)
+%--------------------------------------
+
 A.SMeventsEnabled = [1 1 1 0 0 0 0 0];
 A.startReportingEvents();
-% For sound generation
-% SF = 50000;
-% W = BpodWavePlayer('COM4');
-% W.SamplingRate = SF;
-% LeftSound = GenerateSineWave(SF, S.GUI.SoundFreqLeft, S.GUI.SoundDuration);
-% RightSound = GenerateSineWave(SF, S.GUI.SoundFreqRight, S.GUI.SoundDuration);
-% W.loadWaveform(1, LeftSound);
-% W.loadWaveform(2, RightSound);
-% LoadSerialMessages('WavePlayer1', {['P' 3 0], ['P' 3 1], ['P' 3 2]});
-
-% LightPulseDuration = 10;
-% LightWaveform = ones(1, 10*SF)*5;
-% W.loadWaveform(2, LightWaveform);
 
 % Setting the seriers messages for opening the odor valve
 % valve 1 is the vacumm; valve 2 is odor 1; valve 3 is odor 2
@@ -85,15 +81,9 @@ disp(['Trial# ' num2str(currentTrial) ' TrialType: ' num2str(TrialTypes(currentT
     R = GetValveTimes(S.GUI.RewardAmount, [1 2]); LeftValveTime = R(1); RightValveTime = R(2); % Update reward amounts
      
 
-    % uncomment for Left trials only
     valveID = 1;
     leftAction = 'reward'; rightAction = 'Timeout';
     ValveCode = 1; ValveTime = LeftValveTime; 
-
-    % uncomment for Right trials only
-%      valveID = 15;
-%      leftAction = 'Timeout'; rightAction = 'reward';
-%      ValveCode = 2;ValveTime = RightValveTime; 
                 
                 
     AspValveTime = GetValveTimes(S.GUI.AspirationTime,3); 
