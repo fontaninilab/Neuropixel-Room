@@ -43,7 +43,7 @@ for i = 1:nTrials
    data(i).TrialSequence = SessionData.TrialSequence(i);   
    data(i).reward = ~isnan(SessionData.RawEvents.Trial{1,i}.States.reward(1,1));
    
-   if exist('SessionData.ValveSequence','var')
+   if isfield(SessionData,'ValveSequence')
         data(i).ValveSequence = SessionData.ValveSequence(i);
    end
    
