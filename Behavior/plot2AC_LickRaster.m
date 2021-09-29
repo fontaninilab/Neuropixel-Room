@@ -61,23 +61,28 @@ sumData.Clicksremoved = cCount;
 
 %% list trials with no lateral licks and remove
 
-count = 1;
+count1 = 1; count2 = 1;
 lateralmiss = [];
+centralmiss = [];
 for i = 1:length(data)
     
     A = isempty(data(i).LeftLicks);
     B = isempty(data(i).RightLicks);
+    C = isempty(data(i).CentralLicks);
     
     if A && B
-        lateralmiss(count) = i;
-        count = count + 1;
+        lateralmiss(count1) = i;
+        count1 = count1 + 1;
+    elseif C
+        centralmiss(count2) = i;
+        count2 = count2 + 1;
     end
 end
 
 % remove these trials from trial struct
-data(lateralmiss) = [];
+data([lateralmiss centralmiss]) = [];
 
-fprintf('Removed %d trials with no lateral licks\n',length(c));
+fprintf('Removed %d trials with no lateral licks\nRemoved %d trials with no central licks\n',[length(lateralmiss) length(centralmiss)]);
 
 %% find the direction of the first lateral lick for each trial; left-1; right-2
  
@@ -136,6 +141,10 @@ else
     fprintf('No lick bias\n');
     sumData.biasdir = 'none';
 end
+
+%Calculate percent trials correct
+sumData.performance = 100*(sum([data.reward])./length(data));
+fprintf('Percent correct: %4.2f\n',sumData.performance);
 
 %% %%%%%%%%%%%%%%%%%%%
 %   Lick raster plot
