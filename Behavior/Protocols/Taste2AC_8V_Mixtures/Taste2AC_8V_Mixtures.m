@@ -36,9 +36,18 @@ end
 A = BpodAnalogIn('COM6');
 
 A.nActiveChannels = 8;
-A.InputRange = {'-5V:5V',  '-5V:5V',  '-5V:5V',  '-5V:5V',  '-10V:10V', '-10V:10V',  '-10V:10V',  '-10V:10V'};
-A.Thresholds = [-0.5 -0.5 -0.5 2 2 2 2 2];
-A.ResetVoltages = [-0.2 -0.2 -0.2 1.5 1.5 1.5 1.5 1.5];
+A.InputRange = {'-2.5V:2.5V',  '-2.5V:2.5V',  '-2.5V:2.5V',  '-5V:5V',  '-10V:10V', '-10V:10V',  '-10V:10V',  '-10V:10V'};
+
+%---Thresholds for electrical detectors---
+%A.Thresholds = [-0.5 -0.5 -0.5 2 2 2 2 2];
+%A.ResetVoltages = [-0.2 -0.2 -0.2 1.5 1.5 1.5 1.5 1.5];
+%-----------------------------------------
+
+%---Thresholds for optical detectors---
+A.Thresholds = [1 1 1 2 2 2 2 2];
+A.ResetVoltages = [0.1 0.1 0.1 1.5 1.5 1.5 1.5 1.5]; %Should be at or slightly above baseline (check oscilloscope)
+%--------------------------------------
+
 A.SMeventsEnabled = [1 1 1 0 0 0 0 0];
 A.startReportingEvents();
 
@@ -105,13 +114,10 @@ BpodParameterGUI('init', S); % Initialize parameter GUI plugin
 
 BpodSystem.SoftCodeHandlerFunction = 'SoftCodeHandler_MoveZaber';
 
-TotalRewardDisplay('init'); 
+% TotalRewardDisplay('init'); 
 
-valvetimes = [0.2251 0.2671 0.2668 0.2482 0.2034 0.2494 0.2552 0.2373];
-%%for delivering 6ul based on calibration 10/19/20
+valvetimes = [0.259 0.266 0.24 0.25 0.212 0.236 0.225 0.248]; %4ul - Sep 29 2021
 
-% valvetimes = [0.4704 0.551 0.5307 0.54 0.4529 0.5308 0.5480 0.4849];%for delivering 10ul based on calibration 10/19/20; 11/15
-%  valvetimes =[0.3478 0.4091 0.3988 0.3941 0.3281 0.3901 0.4016 0.3611]; %for delivering 8ul
 %% Main loop (runs once per trial)
 for currentTrial = 1:MaxTrials
     disp(['Trial# ' num2str(currentTrial) ' TrialType: ' num2str(TrialTypes(currentTrial)) ' ValveNumber: ' num2str(ValveSeq(currentTrial))  ])
@@ -174,15 +180,20 @@ for currentTrial = 1:MaxTrials
         'StateChangeConditions', {'Tup', 'WaitForLicks'},...
         'OutputActions', {'SoftCode', 1});
 
-    sma = AddState(sma, 'Name', 'WaitForLicks', ... % This example state does nothing, and ends after 0 seconds
+    sma = AddState(sma, 'Name', 'WaitForLicks', ... % 'Timer' duration does not do anything here..
         'Timer', S.GUI.SamplingDuration,...
-        'StateChangeConditions', {'Tup','Timeout', 'AnalogIn1_3', 'MyDelay',},...
+        'StateChangeConditions', {'Tup','TimeoutCentral', 'AnalogIn1_3', 'MyDelay',},...
+        'OutputActions', {});
+    
+    sma = AddState(sma, 'Name', 'TimeoutCentral', ... % 'Timer' duration does not do anything here..
+        'Timer', S.GUI.PunishTimeoutDuration,...
+        'StateChangeConditions', {'Tup', 'AspirationUp'},...
         'OutputActions', {'SoftCode', 2});
 
     sma = AddState(sma, 'Name', 'MyDelay', ... % This example state does nothing, and ends after 0 seconds
         'Timer', S.GUI.DelayDuration,...
         'StateChangeConditions', {'Tup', 'LateralSpoutsUp'},...
-        'OutputActions', {});
+        'OutputActions', {'SoftCode', 2});
     
     sma = AddState(sma, 'Name', 'LateralSpoutsUp', ... % This example state does nothing, and ends after 0 seconds
         'Timer', S.GUI.MotorTime,...
@@ -263,9 +274,9 @@ for currentTrial = 1:MaxTrials
         SaveBpodSessionData; % Saves the field BpodSystem.Data to the current data file
         
         %--- Typically a block of code here will update online plots using the newly updated BpodSystem.Data
-        if ~isnan(BpodSystem.Data.RawEvents.Trial{currentTrial}.States.reward(1))
-            TotalRewardDisplay('add', S.GUI.RewardAmount);
-        end
+%         if ~isnan(BpodSystem.Data.RawEvents.Trial{currentTrial}.States.reward(1))
+%             TotalRewardDisplay('add', S.GUI.RewardAmount);
+%         end
     else
     end
 

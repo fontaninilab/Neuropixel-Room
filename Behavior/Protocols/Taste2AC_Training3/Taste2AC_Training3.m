@@ -9,7 +9,7 @@ TrialTypes = ceil(rand(1,MaxTrials)*2);
 valve1 = 1; v1 = (2*valve1)-1;
 valve2 = 8; v2 = (2*valve2)-1;
 
-%--- Define parameters and trial structure
+%---Define parameters and trial structure---
 S = BpodSystem.ProtocolSettings; % Loads settings file chosen in launch manager into current workspace as a struct called 'S'
 if isempty(fieldnames(S))  % If chosen settings file was an empty struct, populate struct with default settings
     % Define default settings here as fields of S (i.e S.InitialDelay = 3.2)
@@ -88,10 +88,8 @@ BpodParameterGUI('init', S); % Initialize parameter GUI plugin
 BpodSystem.SoftCodeHandlerFunction = 'SoftCodeHandler_MoveZaber';
 
 TotalRewardDisplay('init'); 
-valvetimes = [0.2914 0.3082 0.2864 0.2891 0.2757 0.2745 0.3080 0.2839];
-%for delivering 6ul based on calibration 12/30/20 
-%valvetimes = [0.2251 0.2671 0.2668 0.2482 0.2034 0.2494 0.2552 0.2373];
-%for delivering 6ul based on calibration 10/19/2
+
+valvetimes = [0.259 0.266 0.24 0.25 0.212 0.236 0.225 0.248]; %4ul - Sep 29 2021
 
 %% Main loop (runs once per trial)
 for currentTrial = 1:MaxTrials
@@ -104,12 +102,12 @@ for currentTrial = 1:MaxTrials
                 valveID = v1; % it seems confusion; here the 3 means the message 3
                 leftAction = 'reward'; rightAction = 'Timeout';
                 ValveCode = 1; ValveTime = LeftValveTime; % reward, valve1 = left spout
-                 centralvalvetime = valvetimes((valveID+1)/2);
+                centralvalvetime = valvetimes((valveID+1)/2);
             case 2 % right trials; delivery of tastant from line 2
                 valveID = v2;
                 leftAction = 'Timeout'; rightAction = 'reward';
                 ValveCode = 2; ValveTime = RightValveTime; % reward, valve2 = right spout
-                 centralvalvetime = valvetimes((valveID+1)/2);
+                centralvalvetime = valvetimes((valveID+1)/2);
         end
     else
         % add context
@@ -133,7 +131,7 @@ for currentTrial = 1:MaxTrials
     
      %NOTE: OutputAction occurs at the beginning of the 'Timer'
     sma = AddState(sma, 'Name', 'TasteValveOn', ... %Open specific taste valve
-        'Timer', LeftValveTime,...
+        'Timer', centralvalvetime,...
         'StateChangeConditions ', {'Tup', 'TasteValveOff'},...
         'OutputActions', {'ValveModule1', valveID}); 
     

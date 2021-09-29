@@ -102,12 +102,8 @@ BpodSystem.SoftCodeHandlerFunction = 'SoftCodeHandler_MoveZaber';
 
 TotalRewardDisplay('init'); 
 
-valvetimes = [0.1801 0.1893 0.1642 0.2334 0.2034 0.2083 0.1669 0.1542]; %4ul
-% valvetimes = [0.2413 0.2632 0.2272 0.3060 0.2788 0.2783 0.2375 0.2190]; % 5ul
-% valvetimes = [0.3025 0.3371 0.2902 0.3785 0.3501 0.3484 0.3080 0.2839];
-%for delivering 6ul based on calibration 3/15/20 
-% valvetimes = [0.2914 0.3082 0.2864 0.2891 0.2757 0.2745 0.3080 0.2839];
-% %for delivering 6ul based on calibration 12/30/20 
+valvetimes = [0.259 0.266 0.24 0.25 0.212 0.236 0.225 0.248]; %4ul - Sep 29 2021
+
  
 %% Main loop (runs once per trial)
 for currentTrial = 1:MaxTrials
@@ -120,12 +116,12 @@ for currentTrial = 1:MaxTrials
                 valveID = v1; % it seems confusion; here the 3 means the message 3
                 leftAction = 'reward'; rightAction = 'Timeout';
                 ValveCode = 1; ValveTime = LeftValveTime; % reward, valve1 = left spout
-                 centralvalvetime = valvetimes((valveID+1)/2);
+                centralvalvetime = valvetimes((valveID+1)/2);
             case 2 % right trials; delivery of tastant from line 2
                 valveID = v2;
                 leftAction = 'Timeout'; rightAction = 'reward';
                 ValveCode = 2; ValveTime = RightValveTime; % reward, valve2 = right spout
-                 centralvalvetime = valvetimes((valveID+1)/2);
+                centralvalvetime = valvetimes((valveID+1)/2);
         end
     else
         % add context
@@ -149,7 +145,7 @@ for currentTrial = 1:MaxTrials
     
    %NOTE: OutputAction occurs at the beginning of the 'Timer'
     sma = AddState(sma, 'Name', 'TasteValveOn', ... %Open specific taste valve
-        'Timer', LeftValveTime,...
+        'Timer', centralvalvetime,...
         'StateChangeConditions ', {'Tup', 'TasteValveOff'},...
         'OutputActions', {'ValveModule1', valveID}); 
     

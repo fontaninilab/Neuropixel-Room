@@ -6,8 +6,8 @@ MaxTrials = 10000; % Set to some sane value, for preallocation
 
 TrialTypes = ceil(rand(1,MaxTrials)*2);
 
-valve1 = 1; v1 = (2*valve1)-1; Taste1 = 'Water';
-valve2 = 8; v2 = (2*valve2)-1; Taste2 = 'Water';
+valve1 = 2; v1 = (2*valve1)-1; Taste1 = 'Water';
+valve2 = 7; v2 = (2*valve2)-1; Taste2 = 'Water';
 
 %--- Define parameters and trial structure
 S = BpodSystem.ProtocolSettings; % Loads settings file chosen in launch manager into current workspace as a struct called 'S'
@@ -88,6 +88,8 @@ BpodParameterGUI('init', S); % Initialize parameter GUI plugin
 BpodSystem.SoftCodeHandlerFunction = 'SoftCodeHandler_MoveZaber';
 
 TotalRewardDisplay('init'); 
+
+valvetimes = [0.259 0.266 0.24 0.25 0.212 0.236 0.225 0.248]; %4ul - Sep 29 2021
 %% Main loop (runs once per trial)
 for currentTrial = 1:MaxTrials
     disp(['Trial# ' num2str(currentTrial) ' TrialType: ' num2str(TrialTypes(currentTrial))])
@@ -99,10 +101,12 @@ for currentTrial = 1:MaxTrials
                 valveID = v1; % it seems confusion; here the 3 means the message 3
                 leftAction = 'reward'; rightAction = 'Timeout';
                 ValveCode = 1; ValveTime = LeftValveTime; % reward, valve1 = left spout
+                centralvalvetime = valvetimes((valveID+1)/2);
             case 2 % right trials; delivery of tastant from line 2
                 valveID = v2;
                 leftAction = 'Timeout'; rightAction = 'reward';
                 ValveCode = 2; ValveTime = RightValveTime; % reward, valve2 = right spout
+                centralvalvetime = valvetimes((valveID+1)/2);
         end
     else
         % add context
@@ -122,7 +126,7 @@ for currentTrial = 1:MaxTrials
     
     %NOTE: OutputAction occurs at the beginning of the 'Timer'
     sma = AddState(sma, 'Name', 'TasteValveOn', ... %Open specific taste valve
-        'Timer', LeftValveTime,...
+        'Timer', centralvalvetime,...
         'StateChangeConditions ', {'Tup', 'TasteValveOff'},...
         'OutputActions', {'ValveModule1', valveID}); 
     
