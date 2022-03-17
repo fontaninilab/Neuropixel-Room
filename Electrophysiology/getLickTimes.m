@@ -43,6 +43,8 @@ alignedLickTimes.firstCentral = NaN(3,size(behaviorEvents,2));
 alignedLickTimes.RlickID = 2;
 alignedLickTimes.LlickID = 1;
 
+alignedLickTimes.trialStartTimes = trialStartTimes;
+
 %%% For each lick align to trial start event and first central lick %%%
 for i = 1:size(behaviorEvents,2)
     aCount = 0; bCount = 0; cCount = 0;
