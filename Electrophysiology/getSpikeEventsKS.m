@@ -61,13 +61,19 @@ events.fsEv = fsEv;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%% 1. Load meta data for spike acquisition %%%%%%%%
-ap_metaName = [fileChunks{end} '_t0.imec0.ap.meta']; %Name of ap.meta file
-ap_meta = SGLXReadMeta(ap_metaName, [myPath '\' fileChunks{end} '_imec0']);
+% % ap_metaName = [fileChunks{end} '_t0.imec0.ap.meta']; %Name of ap.meta file
+% % ap_meta = SGLXReadMeta(ap_metaName, [myPath '\' fileChunks{end} '_imec0']);
+
+ap_metaName = [fileChunks{end} '_t0_CAR.imec.ap.meta']; %Name of ap.meta file
+ap_meta = SGLXReadMeta(ap_metaName, [myPath '\' fileChunks{end} '_CAR']);
 fs = str2double(ap_meta.imSampRate);
 
 %%%%%%%% 2. Load spike times and cluster IDs %%%%%%%%
-spks = double(readNPY(fullfile([myPath '\' fileChunks{end} '_imec0'],'spike_times.npy'))) / fs;
-clust  = double(readNPY(fullfile([myPath '\' fileChunks{end} '_imec0'],'spike_clusters.npy')));
+% % spks = double(readNPY(fullfile([myPath '\' fileChunks{end} '_imec0'],'spike_times.npy'))) / fs;
+% % clust  = double(readNPY(fullfile([myPath '\' fileChunks{end} '_imec0'],'spike_clusters.npy')));
+
+spks = double(readNPY(fullfile([myPath '\' fileChunks{end} '_CAR'],'spike_times.npy'))) / fs;
+clust  = double(readNPY(fullfile([myPath '\' fileChunks{end} '_CAR'],'spike_clusters.npy')));
 
 % load cluster groups
 opts = delimitedTextImportOptions("NumVariables", 4);
@@ -75,7 +81,7 @@ opts.DataLines = [2, Inf];
 opts.Delimiter = "\t";
 opts.VariableNames = ["id", "Amplitude", "ContamPct", "KSLabel", "amp", "ch", "depth", "fr", "group", "n_spikes", "sh"];
 opts.VariableTypes = ["double", "double", "double", "char", "double", "double", "double", "double", "char", "double", "double"];
-dat = readtable([myPath '\' fileChunks{end} '_imec0\cluster_info.tsv'],opts);
+dat = readtable([myPath '\' fileChunks{end} '_CAR\cluster_info.tsv'],opts);
 
 % discard noise clusters
 clustID = dat.id(~contains(dat.group,'noise'));
@@ -117,6 +123,7 @@ for i = 1:length(spikes.clustID)
     cellInfo{i,9} = length(spks) / (spks(end) - spks(1)); % mean fr
     
 end
+
     
 
 
