@@ -1,8 +1,9 @@
-function data = extractTrialData2AFC(SessionData)
+function data = extractTrialData2AFC(SessionData,SessionID)
 % Extract trial-by-trial session data from BPOD 2AFC task structure
 %
 % INPUTS
 % SessionData: BPOD output
+% SessionID (optional): (string) session ID identifier 
 %
 % OUTPUTS
 % data: struct with trial data from BPOD behavior acquisition
@@ -19,6 +20,9 @@ function data = extractTrialData2AFC(SessionData)
 nTrials = SessionData.nTrials;
 
 for i = 1:nTrials
+    if nargin > 1
+        data(i).SessionID = SessionID;
+    end
     data(i).trialn = i;
     data(i).TrialStart = SessionData.TrialStartTimestamp(i);
     
