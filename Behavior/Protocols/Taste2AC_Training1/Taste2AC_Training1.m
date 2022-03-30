@@ -26,7 +26,7 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     S.GUI.MotorTime = 0.5;
     S.GUI.Up        = 14;
     S.GUI.Down      =   5;
-    S.GUI.ResponseTime = 5;
+    S.GUI.ResponseTime = 10;
     S.GUI.DrinkTime = 2;
     S.GUI.RewardAmount = 3; % in ul
     S.GUI.PunishTimeoutDuration = 10;
@@ -89,7 +89,7 @@ BpodSystem.SoftCodeHandlerFunction = 'SoftCodeHandler_MoveZaber';
 
 TotalRewardDisplay('init'); 
 
-valvetimes = [0.259 0.266 0.24 0.25 0.212 0.236 0.225 0.248]; %4ul - Sep 29 2021
+valvetimes = [0.17 0.18 0.16 0.17 0.15 0.18 0.16 0.19]; %3ul - Dec 09, 2021
 %% Main loop (runs once per trial)
 for currentTrial = 1:MaxTrials
     disp(['Trial# ' num2str(currentTrial) ' TrialType: ' num2str(TrialTypes(currentTrial))])
@@ -248,18 +248,29 @@ for currentTrial = 1:MaxTrials
         return
     end
     
-    
-    
-    Outcomes = zeros(1,BpodSystem.Data.nTrials);
+    Outcomes = zeros(1,BpodSystem.Data.nTrials); %Use for graph
+    Outcomes2 = zeros(1,BpodSystem.Data.nTrials); %Populate for cumsum plot
     for x = 1:BpodSystem.Data.nTrials
+        aa = BpodSystem.Data.RawEvents.Trial{x}.Events;
         if ~isnan(BpodSystem.Data.RawEvents.Trial{x}.States.reward(1))
-            Outcomes(x) = 1;
+            Outcomes(x) = 1; %If correct, mark as green
+            Outcomes2(x) = 1;
+        elseif ~isfield(aa, 'AnalogIn1_3')
+            Outcomes(x) = 3; %If no central response, mark as blue open circle
+            Outcomes2(x) = 0;            
+        elseif isfield(aa, 'AnalogIn1_1') || isfield(aa, 'AnalogIn1_2')
+            Outcomes(x) = 0; %If response, but wrong, mark as red
+            Outcomes2(x) = 0;
         elseif ~isnan(BpodSystem.Data.RawEvents.Trial{x}.States.Timeout(1))
-            Outcomes(x) = 0;
+            Outcomes(x) = -1; %If no lateral response, mark as red open circle
+            Outcomes2(x) = 0;
         end         
     end
-    TrialTypeOutcomePlot(BpodSystem.GUIHandles.OutcomePlot,'update',BpodSystem.Data.nTrials+1,TrialTypes,Outcomes)
+    
+    TrialTypeOutcomePlotModified(BpodSystem.GUIHandles.OutcomePlot,'update',BpodSystem.Data.nTrials+1,TrialTypes,Outcomes)
+    
     figure(100);
-    plot(cumsum(Outcomes)./([1:length(Outcomes)]),'-o','Color','r')
-    xlabel('Trial #');ylabel('Performance')
+    plot(cumsum(Outcomes2)./([1:length(Outcomes2)]),'-o','Color','#ad6bd3','MarkerFaceColor','#ad6bd3')
+    xlabel('Trial #','fontsize',16);ylabel('Performance','fontsize',16); title(['Performance for Training ' num2str(S.GUI.TrainingLevel)],'fontsize',20)
+    grid on
 end

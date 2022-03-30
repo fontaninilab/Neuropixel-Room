@@ -197,18 +197,29 @@ disp(['Trial# ' num2str(currentTrial) ' TrialType: ' num2str(TrialTypes(currentT
         return
     end
     
-    
-    
-    Outcomes = zeros(1,BpodSystem.Data.nTrials);
+    Outcomes = zeros(1,BpodSystem.Data.nTrials); %Use for graph
+    Outcomes2 = zeros(1,BpodSystem.Data.nTrials); %Populate for cumsum plot
     for x = 1:BpodSystem.Data.nTrials
+        aa = BpodSystem.Data.RawEvents.Trial{x}.Events;
         if ~isnan(BpodSystem.Data.RawEvents.Trial{x}.States.reward(1))
-            Outcomes(x) = 1;
+            Outcomes(x) = 1; %If correct, mark as green
+            Outcomes2(x) = 1;
+        elseif ~isfield(aa, 'AnalogIn1_3')
+            Outcomes(x) = 3; %If no central response, mark as blue open circle
+            Outcomes2(x) = 0;            
+        elseif isfield(aa, 'AnalogIn1_1') || isfield(aa, 'AnalogIn1_2')
+            Outcomes(x) = 0; %If response, but wrong, mark as red
+            Outcomes2(x) = 0;
         elseif ~isnan(BpodSystem.Data.RawEvents.Trial{x}.States.Timeout(1))
-            Outcomes(x) = 0;
+            Outcomes(x) = -1; %If no lateral response, mark as red open circle
+            Outcomes2(x) = 0;
         end         
     end
-    TrialTypeOutcomePlot(BpodSystem.GUIHandles.OutcomePlot,'update',BpodSystem.Data.nTrials+1,TrialTypes,Outcomes)
+    
+    TrialTypeOutcomePlotModified(BpodSystem.GUIHandles.OutcomePlot,'update',BpodSystem.Data.nTrials+1,TrialTypes,Outcomes)
+    
     figure(100);
-    plot(cumsum(Outcomes)./([1:length(Outcomes)]),'-o','Color','r')
-    xlabel('Trial #');ylabel('Performance')
+    plot(cumsum(Outcomes2)./([1:length(Outcomes2)]),'-o','Color','#ad6bd3','MarkerFaceColor','#ad6bd3')
+    xlabel('Trial #','fontsize',16);ylabel('Performance','fontsize',16); title(['Performance for Training right only'],'fontsize',20)
+    grid on
 end
