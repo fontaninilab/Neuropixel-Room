@@ -2,10 +2,19 @@ function Taste2AC_8V_Mixtures
 global BpodSystem
 
 %% Setup (runs once before the first trial)
-MaxTrials = 200; % Set to some sane value, for preallocation
-
+MaxTrials = 400; % Set to some sane value, for preallocation
 TrialTypes = ceil(rand(1,MaxTrials)*2);
 
+% % % Pad start with 12 blocked trials % % %
+
+nPad = 2;
+trialseq = [1,1,1,2,2,2];
+TrialTypePad = repmat(trialseq,1,nPad);
+
+valveseq = [1,1,1,8,8,8];
+ValveSeqPad = repmat(valveseq,1,nPad);
+
+% % % % % % % % % % % % % % % % % % % % % % %
 
 %--- Define parameters and trial structure
 S = BpodSystem.ProtocolSettings; % Loads settings file chosen in launch manager into current workspace as a struct called 'S'
@@ -17,8 +26,8 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     
     S.GUI.TrainingLevel = 4;
     S.GUI.SamplingDuration = 3;
-    S.GUI.TasteLeft = 'Sucrose';
-    S.GUI.TasteRight = 'Salt';
+    S.GUI.TasteLeft = 'Salt';
+    S.GUI.TasteRight = 'Sucrose';
     S.GUI.DelayDuration = 2;
     S.GUI.TastantAmount = 0.05;
     S.GUI.MotorTime = 0.5;
@@ -81,11 +90,13 @@ end
 ValveSeq = TrialTypes;
 Type1ValveIDX = 1:4;
 Type2ValveIDX = 5:8;
-nRep = 4;
+nRep = 4; %Number of repeats of each valve # per "block"
 
-nSeq = ceil(length(ValveSeq)/(2*nRep*length(Type1ValveIDX)));
+nSeq = ceil(length(ValveSeq)/(2*nRep*length(Type1ValveIDX))) + 5; %How many blocks of nRep per trial type
 ValvePerm = NaN(nRep*length(Type1ValveIDX),nSeq);
 ValveTemp = repmat(Type1ValveIDX,1,nRep);
+
+%Randomly permute every trial chunk (nRep*nValves = length of chunk)
 for j = 1:nSeq
     ValvePerm(:,j) = ValveTemp(randperm(length(ValveTemp)))';
 end
@@ -93,7 +104,8 @@ ValveIDX = reshape(ValvePerm,1,nRep*length(Type1ValveIDX)*nSeq);
 b = find(TrialTypes(:) == 1);
 ValveSeq(b) = ValveIDX(1:length(b));
 
-nSeq = ceil(length(ValveSeq)/(2*nRep*length(Type2ValveIDX)));
+%Repeat for other trial type
+nSeq = ceil(length(ValveSeq)/(2*nRep*length(Type2ValveIDX))) + 5;
 ValvePerm = NaN(nRep*length(Type2ValveIDX),nSeq);
 ValveTemp = repmat(Type2ValveIDX,1,nRep);
 for j = 1:nSeq
@@ -102,6 +114,13 @@ end
 ValveIDX = reshape(ValvePerm,1,nRep*length(Type2ValveIDX)*nSeq);
 a = find(TrialTypes(:) == 2);
 ValveSeq(a) = ValveIDX(1:length(a));
+
+% % % Add block pad to sequence % % %
+
+ValveSeq = [ValveSeqPad ValveSeq];
+TrialTypes = [TrialTypePad TrialTypes];
+
+% % % % % % % % % % % % % % % % % % % 
 
  
 %  Initialize plots
@@ -116,7 +135,21 @@ BpodSystem.SoftCodeHandlerFunction = 'SoftCodeHandler_MoveZaber';
 
 % TotalRewardDisplay('init'); 
 
-valvetimes = [0.259 0.266 0.24 0.25 0.212 0.236 0.225 0.248]; %4ul - Sep 29 2021
+valvetimes = [0.17 0.18 0.16 0.17 0.15 0.18 0.16 0.19]; %3ul - Dec 09, 2021
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Reminder to press record
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+figure(50);
+text(1,1,'DID YOU PRESS RECORD, DUMMY??? I CERTAINLY HOPE YOU DID OR YOU"LL BE MAD!','fontsize',22,'color','red','fontweight','bold')
+set(gca,'xlim',[0 20],'ylim',[0 2],'XTick',[],'YTick',[])
+
+pp = [1800 200];
+set(gcf,'PaperPositionMode','auto')
+set(gcf,'PaperOrientation','Landscape')
+set(gcf,'PaperUnits','points')
+set(gcf,'Position',[100 400 pp])
 
 %% Main loop (runs once per trial)
 for currentTrial = 1:MaxTrials
@@ -286,18 +319,29 @@ for currentTrial = 1:MaxTrials
         return
     end
     
-    
-    
-    Outcomes = zeros(1,BpodSystem.Data.nTrials);
+    Outcomes = zeros(1,BpodSystem.Data.nTrials); %Use for graph
+    Outcomes2 = zeros(1,BpodSystem.Data.nTrials); %Populate for cumsum plot
     for x = 1:BpodSystem.Data.nTrials
+        aa = BpodSystem.Data.RawEvents.Trial{x}.Events;
         if ~isnan(BpodSystem.Data.RawEvents.Trial{x}.States.reward(1))
-            Outcomes(x) = 1;
+            Outcomes(x) = 1; %If correct, mark as green
+            Outcomes2(x) = 1;
+        elseif ~isfield(aa, 'AnalogIn1_3')
+            Outcomes(x) = 3; %If no central response, mark as blue open circle
+            Outcomes2(x) = 0;            
+        elseif isfield(aa, 'AnalogIn1_1') || isfield(aa, 'AnalogIn1_2')
+            Outcomes(x) = 0; %If response, but wrong, mark as red
+            Outcomes2(x) = 0;
         elseif ~isnan(BpodSystem.Data.RawEvents.Trial{x}.States.Timeout(1))
-            Outcomes(x) = 0;
+            Outcomes(x) = -1; %If no lateral response, mark as red open circle
+            Outcomes2(x) = 0;
         end         
     end
-    TrialTypeOutcomePlot(BpodSystem.GUIHandles.OutcomePlot,'update',BpodSystem.Data.nTrials+1,TrialTypes,Outcomes)
+    
+    TrialTypeOutcomePlotModified(BpodSystem.GUIHandles.OutcomePlot,'update',BpodSystem.Data.nTrials+1,TrialTypes,Outcomes)
+    
     figure(100);
-    plot(cumsum(Outcomes)./([1:length(Outcomes)]),'-o','Color','r')
-    xlabel('Trial #');ylabel('Performance')
+    plot(cumsum(Outcomes2)./([1:length(Outcomes2)]),'-o','Color','#ad6bd3','MarkerFaceColor','#ad6bd3')
+    xlabel('Trial #','fontsize',16);ylabel('Performance','fontsize',16); title(['Performance for Training ' num2str(S.GUI.TrainingLevel)],'fontsize',20)
+    grid on
 end
