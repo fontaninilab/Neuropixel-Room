@@ -342,6 +342,6 @@ for currentTrial = 1:MaxTrials
     
     figure(100);
     plot(cumsum(Outcomes2)./([1:length(Outcomes2)]),'-o','Color','#ad6bd3','MarkerFaceColor','#ad6bd3')
-    xlabel('Trial #','fontsize',16);ylabel('Performance','fontsize',16); title(['Performance for Training ' num2str(S.GUI.TrainingLevel)],'fontsize',20)
+    xlabel('Trial #','fontsize',16);ylabel('Performance','fontsize',16); title('Performance for 8V Mixture Test','fontsize',20)
     grid on
 end

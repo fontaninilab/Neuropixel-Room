@@ -87,7 +87,7 @@ BpodParameterGUI('init', S); % Initialize parameter GUI plugin
 
 BpodSystem.SoftCodeHandlerFunction = 'SoftCodeHandler_MoveZaber';
 
-TotalRewardDisplay('init'); 
+% TotalRewardDisplay('init'); 
 
 valvetimes = [0.17 0.18 0.16 0.17 0.15 0.18 0.16 0.19]; %3ul - Dec 09, 2021
 %% Main loop (runs once per trial)
@@ -99,25 +99,16 @@ for currentTrial = 1:MaxTrials
         switch TrialTypes(currentTrial)
             case 1 % left trials; delivery of tastant from line 1
                 valveID = v1; % it seems confusion; here the 3 means the message 3
-                leftAction = 'reward'; rightAction = 'Timeout';
-                ValveCode = 1; ValveTime = LeftValveTime; % reward, valve1 = left spout
                 centralvalvetime = valvetimes((valveID+1)/2);
             case 2 % right trials; delivery of tastant from line 2
                 valveID = v2;
-                leftAction = 'Timeout'; rightAction = 'reward';
-                ValveCode = 2; ValveTime = RightValveTime; % reward, valve2 = right spout
                 centralvalvetime = valvetimes((valveID+1)/2);
         end
     else
-        % add context
         
         
     end
     Asp = GetValveTimes(S.GUI.AspirationTime,3); AspValveTime = Asp;
-
-   if S.GUI.TrainingLevel ==1 || S.GUI.TrainingLevel ==2
-       leftAction = 'reward'; rightAction ='reward';
-   end
     
     
     %--- Assemble state machine
@@ -163,39 +154,29 @@ for currentTrial = 1:MaxTrials
         'OutputActions', {'SoftCode', 3});
     
     
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  if S.GUI.TrainingLevel ~=2  % all other case, meaning not correction trials; (include the habituation + no_correction)
-    sma = AddState(sma, 'Name', 'WaitForLateralLicks', ... % Wait for lateral lick sampling
+    
+    sma = AddState(sma, 'Name', 'WaitForLateralLicks', ... % Wait for lateral lick sampling 
         'Timer', S.GUI.ResponseTime,...
-        'StateChangeConditions', {'Tup', 'Timeout', 'AnalogIn1_1', leftAction, 'AnalogIn1_2', rightAction},...
+        'StateChangeConditions', {'Tup', 'Timeout', 'AnalogIn1_1', 'LeftReward', 'AnalogIn1_2', 'RightReward'},... %Reward or licking either side
         'OutputActions', {});
-  else
-      switch TrialTypes(currentTrial) % with correction
-          case 1 % left trials; only see whether animals lick left spout
-              sma = AddState(sma, 'Name', 'WaitForLicks', ... % This example state does nothing, and ends after 0 seconds
-                  'Timer', S.GUI.ResponseTime,...
-                  'StateChangeConditions', {'Tup', 'Timeout', 'AnalogIn1_1', leftAction},...
-                  'OutputActions', {});
-          case 2
-              sma = AddState(sma, 'Name', 'WaitForLicks', ... % This example state does nothing, and ends after 0 seconds
-                  'Timer', S.GUI.ResponseTime,...
-                  'StateChangeConditions', {'Tup', 'Timeout', 'AnalogIn1_2', rightAction},...
-                  'OutputActions', {});
-      end
-  end
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
-    sma = AddState(sma, 'Name', 'reward', ... % This example state does nothing, and ends after 0 seconds
-        'Timer', ValveTime,...
+
+ 
+    sma = AddState(sma, 'Name', 'LeftReward', ... % Reward left drop for licking left
+        'Timer', LeftValveTime,...
         'StateChangeConditions', {'Tup', 'Drinking'},...
-        'OutputActions', {'ValveState', ValveCode});
+        'OutputActions', {'ValveState', 1});
     
-    sma = AddState(sma, 'Name', 'Drinking', ... % This example state does nothing, and ends after 0 seconds
+    sma = AddState(sma, 'Name', 'RightReward', ... % Reward right drop for licking right
+        'Timer', RightValveTime,...
+        'StateChangeConditions', {'Tup', 'Drinking'},...
+        'OutputActions', {'ValveState', 2});
+    
+    sma = AddState(sma, 'Name', 'Drinking', ... 
         'Timer', S.GUI.DrinkTime,...
         'StateChangeConditions', {'Tup', 'LateralSpoutsDown'},...
         'OutputActions', {});
     
-    sma = AddState(sma, 'Name', 'LateralSpoutsDown', ... % This example state does nothing, and ends after 0 seconds
+    sma = AddState(sma, 'Name', 'LateralSpoutsDown', ... 
         'Timer', S.GUI.MotorTime,...
         'StateChangeConditions', {'Tup', 'AspirationUp'},...
         'OutputActions', {'SoftCode', 4});
@@ -220,7 +201,7 @@ for currentTrial = 1:MaxTrials
         'StateChangeConditions', {'Tup', 'ITI'},...
         'OutputActions', {'SoftCode', 6});
     
-    sma = AddState(sma, 'Name', 'ITI', ... % This example state does nothing, and ends after 0 seconds
+    sma = AddState(sma, 'Name', 'ITI', ... 
         'Timer', S.GUI.ITI,...
         'StateChangeConditions', {'Tup', '>exit'},...
         'OutputActions', {});
@@ -235,10 +216,6 @@ for currentTrial = 1:MaxTrials
         BpodSystem.Data.TrialSettings(currentTrial) = S; % Adds the settings used for the current trial to the Data struct (to be saved after the trial ends)
         SaveBpodSessionData; % Saves the field BpodSystem.Data to the current data file
         
-        %--- Typically a block of code here will update online plots using the newly updated BpodSystem.Data
-        if ~isnan(BpodSystem.Data.RawEvents.Trial{currentTrial}.States.reward(1))
-            TotalRewardDisplay('add', S.GUI.RewardAmount);
-        end
     else
     end
 
@@ -252,7 +229,7 @@ for currentTrial = 1:MaxTrials
     Outcomes2 = zeros(1,BpodSystem.Data.nTrials); %Populate for cumsum plot
     for x = 1:BpodSystem.Data.nTrials
         aa = BpodSystem.Data.RawEvents.Trial{x}.Events;
-        if ~isnan(BpodSystem.Data.RawEvents.Trial{x}.States.reward(1))
+        if ~isnan(BpodSystem.Data.RawEvents.Trial{x}.States.RightReward(1)) || ~isnan(BpodSystem.Data.RawEvents.Trial{x}.States.LeftReward(1))
             Outcomes(x) = 1; %If correct, mark as green
             Outcomes2(x) = 1;
         elseif ~isfield(aa, 'AnalogIn1_3')

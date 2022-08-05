@@ -8,6 +8,10 @@ MaxTrials = 10000; % Set to some sane value, for preallocation
 
 TrialTypes = ceil(rand(1,MaxTrials)*2);
 
+valveN = 8; %Valve number
+valveID = (2*valveN)-1;
+
+
 %---Define parameters and trial structure---
 S = BpodSystem.ProtocolSettings; % Loads settings file chosen in launch manager into current workspace as a struct called 'S'
 if isempty(fieldnames(S))  % If chosen settings file was an empty struct, populate struct with default settings
@@ -76,12 +80,11 @@ BpodSystem.SoftCodeHandlerFunction = 'SoftCodeHandler_MoveZaber';
 TotalRewardDisplay('init'); 
 %% Main loop (runs once per trial)
 for currentTrial = 1:MaxTrials
-disp(['Trial# ' num2str(currentTrial) ' TrialType: ' num2str(TrialTypes(currentTrial))])
+disp(['Trial# ' num2str(currentTrial) ' TrialType: ' num2str(TrialTypes(currentTrial)) ' Valve #: ' num2str(valveN)])
     S = BpodParameterGUI('sync', S); % Sync parameters with BpodParameterGUI plugin
     R = GetValveTimes(S.GUI.RewardAmount, [1 2]); LeftValveTime = R(1); RightValveTime = R(2); % Update reward amounts
      
 
-    valveID = 1;
     leftAction = 'reward'; rightAction = 'Timeout';
     ValveCode = 1; ValveTime = LeftValveTime; 
                 
