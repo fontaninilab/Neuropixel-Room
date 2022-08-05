@@ -1,4 +1,4 @@
-function [spikeMat,spikeMatLabels] = getClusterSpikeTimes(spikeTimes,events,lickData);
+function [spikeMat,spikeMatLabels] = getClusterSpikeTimes(spikeTimes,events,LickData);
 % Aligns spike times to trial start
 %
 % INPUTS
@@ -10,15 +10,7 @@ function [spikeMat,spikeMatLabels] = getClusterSpikeTimes(spikeTimes,events,lick
 %          .lickEv = struct with lick event indices
 %          .trialStartEv = trial start event indices
 %          .fsEv = nidaq sampling rate
-%  lickData: struct with aligned lick times (from getLickTimes.m)
-%            .firstCentral = 3xN array with, trial #; lick times aligned to session start, trial start
-%            .firstLateral = 5xN array, trial #; lick times aligned to session start, trial start, first central; lick ID
-%            .central = 4xM array, trial #; lick times aligned to session start, trial start, first central
-%            .left = 4xL array, trial #; lick times aligned to session start, trial start, first central
-%            .right = 4xR array, trial #; lick times aligned to session start, trial start, first central
-%            .RlickID = ID # for first right lick (.firstLateral row 5)
-%            .LlickID = ID # for first left lick (.firstLateral row 5)
-%            .labels = 4x1 cell labels for rows of lick times
+%  LickData: struct with aligned lick times (from getLickTimes.m)
 %
 % OUTPUTS
 %   spikeMat: (array) 4xN (or 3xN with no lickData input) array containing spike times 
@@ -27,6 +19,11 @@ function [spikeMat,spikeMatLabels] = getClusterSpikeTimes(spikeTimes,events,lick
 %                   string labels for each row in spikeMat.
 
 trialStartTimes = events.trialStartEv./events.fsEv; %Convert timestamps to time (s)
+if nargin > 2
+    trialStartTimes = [LickData.TrialStartNP];
+
+end
+
 trialN = NaN(1,length(spikeTimes));
 spikeTimesTrial = spikeTimes;
 
@@ -53,7 +50,9 @@ for i = 1:length(trialStartTimes)
     spikeTimesTrial(trialIDX) = spikeTimesTrial(trialIDX) - trialStartTimes(i);
    
    if nargin > 2
-       centralAligned(trialIDX) = spikeTimesTrial(trialIDX) - lickData.firstCentral(3,i);
+        
+       centralAligned(trialIDX) = spikeTimesTrial(trialIDX) - LickData(i).CentralLicksNP(1);
+
    end
           
 end

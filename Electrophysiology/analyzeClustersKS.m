@@ -2,7 +2,7 @@ rootdir = 'C:\Users\admin\Documents\DATA\Jennifer\';
 sep = '\';
 outputdir = 'C:\Users\admin\Documents\DATA\Jennifer\Spikes\';
 
-MouseID = 'JMB010';
+MouseID = 'JMB020';
 SessionID = 'Session1';
 mkdir(outputdir,MouseID);
 
@@ -36,16 +36,17 @@ fprintf('Select data file from BEHAVIOR ACQUISITION COMPUTER:\n');
 %Open lick events from NP acquisition and BEHAVIOR acquisition - Will use event timestamps to remove licks outside of wait period
 [behaviorfile,behaviorpath] = uigetfile({'*.mat'},'Select data file from BEHAVIOR ACQUISITION COMPUTER:');
 load([behaviorpath sep behaviorfile]); 
-behaviorEvents = extractTrialData2AFC(SessionData); %Extract trial data from behavior computer data
+behaviorEvents = extractTrialData2AFC(SessionData,SessionID); %Extract trial data from behavior computer data
 
 load([MouseID '-' SessionID '-EventData']);
-lickDataNP = getLickTimes(events,behaviorEvents,0); %Add to this code input from behavior computer to delete error licks
+LickData = getLickTimes(events,behaviorEvents,0); %Add to this code input from behavior computer to delete error licks
 
 
-fprintf('Saving LickData...\n'); save([MouseID '-' SessionID '-LickDataNP'],'lickDataNP'); save([MouseID '-' SessionID '-BehaviorData'],'behaviorEvents');
+fprintf('Saving LickData...\n'); save([MouseID '-' SessionID '-LickData'],'LickData'); %save([MouseID '-' SessionID '-BehaviorData'],'behaviorEvents');
 mkdir('Figures');
 cd('Figures');
 print([MouseID '-' SessionID '-LickData'],'-dpdf','-r400');
+
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  Separate files + raster per cluster
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -61,7 +62,7 @@ cd('Clusters');
 
 spikeTimes = spikes.spks;
 
-%%% To only analyze single units: %%%
+%%% Uncomment to only analyze single units: %%%
 
 % % %     clustQ = cell2mat(cellInfo(:,6));
 % % %     goodQID = find(clustQ == 1);
@@ -76,7 +77,7 @@ xLimT = 15; %Time limit for x-axis on figures;
 
 
 for i = 1:nClust
-    spikeMat = getClusterSpikeTimes(spikeTimes{i},events,lickData);
+    spikeMat = getClusterSpikeTimes(spikeTimes{i},events,LickData); %CORRECT FOR NEW LICKDATA STRUCTURE!!!!
     cellInfo{i,10} = spikeMat; %Add spike mat to master table of all clusters
 
     CI = cellInfo(i,1:9);
@@ -85,8 +86,8 @@ for i = 1:nClust
     tempspike = spikeMat;
     tempspike(:,tempspike(1,:)==0) = []; %Cut all pre-behavior spikes
 
-    
-    if cell2mat(CI(1,6)) == 1 % Only create plots for single units
+    % Only create plots for single units
+    if cell2mat(CI(1,6)) == 1 
         %%% Plot spike rasters %%%
         subplot(3,2,1); % Trial-aligned spike times
         scatter(tempspike(3,:),tempspike(1,:),10,'filled','k');
