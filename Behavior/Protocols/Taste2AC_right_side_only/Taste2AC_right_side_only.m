@@ -8,7 +8,7 @@ MaxTrials = 10000; % Set to some sane value, for preallocation
 
 TrialTypes = ceil(rand(1,MaxTrials)*2);
 
-valveN = 1; %Valve number
+valveN = 8; %Valve number
 valveID = (2*valveN)-1;
 
 %--- Define parameters and trial structure
