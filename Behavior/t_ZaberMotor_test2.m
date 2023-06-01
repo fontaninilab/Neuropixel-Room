@@ -1,19 +1,21 @@
-function t_ZaberMotor_test (motor_num,distance)
+function t_ZaberMotor_test2 (motor_num,distance)
+%changed into using serialport instead of serial to find the motor device.
+%no need to use fopen and fclose
 %  warning('off','instrument:serial:ClassToBeRemoved');
-port = serial('COM8'); % set the port
+% port = serial('COM8'); % set the port
 tic
-set(port, ...
-    'BaudRate', 115200, ...
-    'DataBits', 8, ...
-    'FlowControl', 'none', ...
-    'Parity', 'none', ...
-    'StopBits', 1, ...
-    'Terminator','CR/LF');
-% port=serialport("COM8",115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
-% configureTerminator(port,"CR");
+% set(port, ...
+%     'BaudRate', 115200, ...
+%     'DataBits', 8, ...
+%     'FlowControl', 'none', ...
+%     'Parity', 'none', ...
+%     'StopBits', 1, ...
+%     'Terminator','CR/LF');
+port=serialport("COM8",115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
+configureTerminator(port,"CR/LF");
 % warning off MATLAB:serial:fgetl:unsuccessfulRead %To suppress warning
 % message
-fopen(port);
+% fopen(port);
 
 protocol = Zaber.AsciiProtocol(port);
 device = Zaber.AsciiDevice.initialize(protocol,motor_num); % very slow to execute
@@ -36,4 +38,6 @@ toc
 % position = device.Units.positiontonative(distance/1000); % convert mm to m
 % device.moveabsolute(position); % Tell the device to move.
 
-fclose(port);
+% fclose(port);
+port=[];
+end

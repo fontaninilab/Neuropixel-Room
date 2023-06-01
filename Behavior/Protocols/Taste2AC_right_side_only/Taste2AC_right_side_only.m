@@ -24,7 +24,7 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     S.GUI.TasteLeft = 'Taste1';
     S.GUI.TasteRight = 'Taste2';
     S.GUI.DelayDuration = 2;
-    S.GUI.TastantAmount = 0.2;
+    S.GUI.TastantAmount = 0.25;
     S.GUI.MotorTime = 0.5;
     S.GUI.Up        = 14;
     S.GUI.Down      =   5;

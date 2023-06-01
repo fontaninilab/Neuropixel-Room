@@ -6,8 +6,8 @@ MaxTrials = 10000; % Set to some sane value, for preallocation
 
 TrialTypes = ceil(rand(1,MaxTrials)*2);
 
-valve1 = 8; v1 = (2*valve1)-1; %Associated with left correct
-valve2 = 1; v2 = (2*valve2)-1; %Associated with right correct
+valve1 = 1; v1 = (2*valve1)-1; %Associated with left correct
+valve2 = 8; v2 = (2*valve2)-1; %Associated with right correct
 
 %---Define parameters and trial structure---
 S = BpodSystem.ProtocolSettings; % Loads settings file chosen in launch manager into current workspace as a struct called 'S'
@@ -26,7 +26,7 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     S.GUI.MotorTime = 0.001;
     S.GUI.Up        = 14;
     S.GUI.Down      =   5;
-    S.GUI.ResponseTime = 5;
+    S.GUI.ResponseTime = 7;
     S.GUI.DrinkTime = 2;
     S.GUI.RewardAmount = 2; % in ul
     S.GUI.PunishTimeoutDuration = 10;
@@ -59,7 +59,8 @@ LoadSerialMessages('ValveModule1', {['O' 1], ['C' 1],['O' 2], ['C' 2],['O' 3], [
 
 % include the block sequence
 if S.GUI.TrainingLevel ~=4
-    trialseq = [1,1,1,2,2,2];
+   trialseq = [2,2,2,1,1,1];
+ %   trialseq = [1,1,1,2,2,2];
     TrialTypes = repmat(trialseq,1,500);
 else
     %break the random sequence into pseudo random (no more than 3 smae trial type in a row)
@@ -88,9 +89,12 @@ BpodParameterGUI('init', S); % Initialize parameter GUI plugin
 BpodSystem.SoftCodeHandlerFunction = 'SoftCodeHandler_MoveZaber';
 
 TotalRewardDisplay('init'); 
-
-valvetimes = [0.17 0.18 0.16 0.17 0.15 0.18 0.16 0.19]; %3ul - Dec 09, 2021
-
+% 
+% valvetimes = [0.17 0.18 0.16 0.17 0.15 0.18 0.16 0.19]; %3ul - Dec 09, 2021
+% valvetimes=[0.150458130337149	0.160746583692705	0.152059845422960	0.157146050670641	0.141205070469519	0.156701807228916	0.144298282574621	0.236136720907507]; %3ul 1/15/23
+% valvetimes= [0.165985997666278	0.191054274860800	0.168374243380742	0.244740371592747	0.157926149928378	0.173459503617832	0.159958475456028	0.206682660645404]; %3ul 10/26/22
+valvetimes= [0.233448793485195	0.237617872714368	0.191379735900284	0.191379735900284	0.191379735900284	0.191379735900284	0.191379735900284	0.246900099087269]; %4ul 5/10/23
+ 
 %% Main loop (runs once per trial)
 for currentTrial = 1:MaxTrials
     disp(['Trial# ' num2str(currentTrial) ' TrialType: ' num2str(TrialTypes(currentTrial))])
@@ -130,6 +134,8 @@ for currentTrial = 1:MaxTrials
 %     sma = SetGlobalCounter(sma, 1, 'Port2In', 1); % Arguments: (sma, CounterNumber, TargetEvent, Threshold)
     
      %NOTE: OutputAction occurs at the beginning of the 'Timer'
+
+
     sma = AddState(sma, 'Name', 'TasteValveOn', ... %Open specific taste valve
         'Timer', centralvalvetime,...
         'StateChangeConditions ', {'Tup', 'TasteValveOff'},...
