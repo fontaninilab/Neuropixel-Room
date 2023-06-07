@@ -11,8 +11,8 @@ nPad = 2;
 trialseq = [1,1,1,2,2,2];
 TrialTypePad = repmat(trialseq,1,nPad);
 % 
-% valveseq = [1,1,1,8,8,8];
- valveseq = [8,8,8,1,1,1];
+ valveseq = [1,1,1,8,8,8];
+% valveseq = [8,8,8,1,1,1];
 ValveSeqPad = repmat(valveseq,1,nPad);
 
 % % % % % % % % % % % % % % % % % % % % % % %
@@ -27,8 +27,8 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     
     S.GUI.TrainingLevel = 4;
     S.GUI.SamplingDuration = 3;
-    S.GUI.TasteLeft = 'Sucrose';
-    S.GUI.TasteRight = 'Salt';
+    S.GUI.TasteLeft = 'Salt';
+    S.GUI.TasteRight = 'Sucrose';
     S.GUI.DelayDuration = 2;
     S.GUI.TastantAmount = 0.05;
     S.GUI.MotorTime = 0.5;
@@ -54,11 +54,11 @@ A.InputRange = {'-2.5V:2.5V',  '-2.5V:2.5V',  '-2.5V:2.5V',  '-5V:5V',  '-10V:10
 %-----------------------------------------
 
 %---Thresholds for optical detectors---
-A.Thresholds = [1 1 1 1 2 2 2 2];
-A.ResetVoltages = [0.1 0.1 0.1 0.1 1.5 1.5 1.5 1.5]; %Should be at or slightly above baseline (check oscilloscope)
+A.Thresholds = [1 1 1 2 2 2 2 2];
+A.ResetVoltages = [0.1 0.1 0.1 1.5 1.5 1.5 1.5 1.5]; %Should be at or slightly above baseline (check oscilloscope)
 %--------------------------------------
 
-A.SMeventsEnabled = [1 1 1 1 0 0 0 0];
+A.SMeventsEnabled = [1 1 1 0 0 0 0 0];
 A.startReportingEvents();
 
 
@@ -89,10 +89,10 @@ end
 
 
 ValveSeq = TrialTypes;
-% Type1ValveIDX = 1:4;
-Type1ValveIDX = 5:8;
-%  Type2ValveIDX = 5:8;
-Type2ValveIDX = 1:4;
+Type1ValveIDX = 1:4;
+%Type1ValveIDX = 5:8;
+  Type2ValveIDX = 5:8;
+%Type2ValveIDX = 1:4;
 nRep = 4; %Number of repeats of each valve # per "block"
 
 nSeq = ceil(length(ValveSeq)/(2*nRep*length(Type1ValveIDX))) + 5; %How many blocks of nRep per trial type
@@ -138,8 +138,8 @@ BpodSystem.SoftCodeHandlerFunction = 'SoftCodeHandler_MoveZaber';
 
 % TotalRewardDisplay('init'); 
 
+valvetimes= [0.232420902410882	0.237617872714368	0.188261051628414	0.194688384124161	0.191379735900284	0.191379735900284	0.191379735900284	0.245306682107329]; %4ul 6/6/23
 
-valvetimes= [0.123254795829022	0.145159131734474	0.145159131734474	0.135159131734474	0.135159131734474	0.135159131734474	0.135159131734474	0.139127361055723]; %3ul 4/12/23
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Reminder to press record
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -163,8 +163,8 @@ for currentTrial = 1:MaxTrials
         switch TrialTypes(currentTrial)
 
             case 1
-                %                 if ismember(ValveSeq(currentTrial),[1:4])
-                if ismember(ValveSeq(currentTrial),[5:8])
+                                 if ismember(ValveSeq(currentTrial),[1:4])
+             %   if ismember(ValveSeq(currentTrial),[5:8])
                     valveID = 2*ValveSeq(currentTrial)-1;
                 end
                 leftAction = 'reward'; rightAction = 'Timeout';
@@ -172,8 +172,8 @@ for currentTrial = 1:MaxTrials
                 centralvalvetime = valvetimes((valveID+1)/2);
 
             case 2 % right trials; delivery of tastant from line 2
-                if ismember(ValveSeq(currentTrial),[1:4])
-                    %                  if ismember(ValveSeq(currentTrial),[5:8])
+                %if ismember(ValveSeq(currentTrial),[1:4])
+                                      if ismember(ValveSeq(currentTrial),[5:8])
                     valveID = 2*ValveSeq(currentTrial)-1;
                 end
                 leftAction = 'Timeout'; rightAction = 'reward';

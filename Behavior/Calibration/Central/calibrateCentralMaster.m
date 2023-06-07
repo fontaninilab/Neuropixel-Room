@@ -12,7 +12,7 @@ cd([rootdir date]);
 
 %% ---- Run next two sections for each valve ----
 
-valveN = 4; %Valve number
+valveN = 1; %Valve number
 [valveOpenTimes, nTrials] = calibrateCentralValve(valveN);
 
 fprintf('**********************************\n')
@@ -20,7 +20,8 @@ fprintf(' Calibration for valve %d complete\n',valveN)
 fprintf('**********************************\n')
 
 %%
-weights = [0.1857 0.2526 0.4082 0.5582 0.7108]; %Enter weights for each valve time by hand
+ weights = [0.1069 0.1906 0.3429 0.5087 0.6708]; %Enter weights for each valve time by hand
+% weights = [0.1002 0.1813 0.3357 0.4819 0.6332];
 % Possible_v3_weights = [0.1402 0.2110 0.3466 0.4754 0.6032];
 data = calcCalibrationData(weights,valveOpenTimes,nTrials);
 

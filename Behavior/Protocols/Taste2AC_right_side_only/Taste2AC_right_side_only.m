@@ -8,7 +8,7 @@ MaxTrials = 10000; % Set to some sane value, for preallocation
 
 TrialTypes = ceil(rand(1,MaxTrials)*2);
 
-valveN = 8; %Valve number
+valveN = 1; %Valve number
 valveID = (2*valveN)-1;
 
 %--- Define parameters and trial structure
@@ -24,7 +24,7 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     S.GUI.TasteLeft = 'Taste1';
     S.GUI.TasteRight = 'Taste2';
     S.GUI.DelayDuration = 2;
-    S.GUI.TastantAmount = 0.25;
+    S.GUI.TastantAmount = 0.3;
     S.GUI.MotorTime = 0.5;
     S.GUI.Up        = 14;
     S.GUI.Down      =   5;
