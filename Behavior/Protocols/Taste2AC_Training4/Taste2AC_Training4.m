@@ -3,6 +3,7 @@ global BpodSystem
 global port;
 port=serialport('COM8', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
 configureTerminator(port,"CR/LF");
+setDTR(port,true);
 fopen(port); %line 2-5 added 6/6/23 to control motor
 %% Setup (runs once before the first trial)
 MaxTrials = 10000; % Set to some sane value, for preallocation

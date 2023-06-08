@@ -2,6 +2,7 @@ function Taste2AC_Training3
 global BpodSystem
 global port;
 port=serialport('COM8', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
+setDTR(port,true);
 configureTerminator(port,"CR/LF");
 fopen(port); %line 2-5 added 6/6/23 to control motor
 %% Setup (runs once before the first trial)
@@ -163,7 +164,7 @@ for currentTrial = 1:MaxTrials
 
     sma = AddState(sma, 'Name', 'WaitForLicks', ... % 'Timer' duration does not do anything here..
         'Timer', S.GUI.SamplingDuration,...
-        'StateChangeConditions', {'Tup','TimeoutCentral', 'AnalogIn1_4', 'CentralDrink',},...
+        'StateChangeConditions', {'Tup','TimeoutCentral', 'AnalogIn1_3', 'CentralDrink',},...
         'OutputActions', {});
 
         sma = AddState(sma, 'Name', 'CentralDrink', ... % 'Timer' duration does not do anything here..
@@ -294,7 +295,7 @@ for currentTrial = 1:MaxTrials
             Outcomes(x) = 1; %If correct, mark as green
             Outcomes2(x) = 1;
             trialcounts(x) = 1;
-        elseif ~isfield(aa, 'AnalogIn1_4')
+        elseif ~isfield(aa, 'AnalogIn1_3')
             Outcomes(x) = 3; %If no central response, mark as blue open circle
             Outcomes2(x) = NaN; %0;
             trialcounts(x) = NaN;
