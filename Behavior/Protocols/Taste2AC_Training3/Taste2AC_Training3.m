@@ -10,8 +10,8 @@ MaxTrials = 10000; % Set to some sane value, for preallocation
 
 TrialTypes = ceil(rand(1,MaxTrials)*2);
 
-valve1 = 1; v1 = (2*valve1)-1; %Associated with left correct
-valve2 = 8; v2 = (2*valve2)-1; %Associated with right correct
+valve1 = 8; v1 = (2*valve1)-1; %Associated with left correct
+valve2 = 1; v2 = (2*valve2)-1; %Associated with right corret
 
 %---Define parameters and trial structure---
 S = BpodSystem.ProtocolSettings; % Loads settings file chosen in launch manager into current workspace as a struct called 'S'
@@ -25,7 +25,7 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     S.GUI.SamplingDuration = 3;
     S.GUI.TasteLeft = ['Valve ' num2str(valve1)];
     S.GUI.TasteRight = ['Valve ' num2str(valve2)];
-    S.GUI.DelayDuration = 1.5;
+    S.GUI.DelayDuration = 1.4;
     S.GUI.TastantAmount = 0.05;
     S.GUI.MotorTime = 0.5;
     S.GUI.Up        = 14;
@@ -40,7 +40,6 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
 end
 % set the threshold for the analog input signal to detect events
 A = BpodAnalogIn('COM6');
-
 A.nActiveChannels = 8;
 A.InputRange = {'-2.5V:2.5V',  '-2.5V:2.5V',  '-2.5V:2.5V',  '-2.5V:2.5V',  '-10V:10V', '-10V:10V',  '-10V:10V',  '-10V:10V'};
 
@@ -50,20 +49,21 @@ A.InputRange = {'-2.5V:2.5V',  '-2.5V:2.5V',  '-2.5V:2.5V',  '-2.5V:2.5V',  '-10
 %-----------------------------------------
 
 %---Thresholds for optical detectors---
-A.Thresholds = [1 1 1 1 2 2 2 2];
-A.ResetVoltages = [0.1 0.1 0.1 0.1 1.5 1.5 1.5 1.5]; %Should be at or slightly above baseline (check oscilloscope)
+A.Thresholds = [0.8 0.8 0.8 1 1 2 2 2];
+A.ResetVoltages = [0.4 0.4 0.4 0.4 1.5 1.5 1.5 1.5]; %Should be at or slightly above baseline (check oscilloscope)
 %--------------------------------------
 
 A.SMeventsEnabled = [1 1 1 1 0 0 0 0];
 A.startReportingEvents();
-
+A.scope;
+A.scope_StartStop;
 % Setting the seriers messages for opening the odor valve
 
 LoadSerialMessages('ValveModule1', {['O' 1], ['C' 1],['O' 2], ['C' 2],['O' 3], ['C' 3], ['O' 4], ['C' 4],['O' 5], ['C' 5],['O' 6], ['C' 6], ['O' 7], ['C' 7], ['O' 8], ['C' 8]});
 
 % include the block sequence
 if S.GUI.TrainingLevel ~=4
- %  trialseq = [2,2,2,1,1,1];
+%   trialseq = [2,2,2,1,1,1];
     trialseq = [1,1,1,2,2,2];
     TrialTypes = repmat(trialseq,1,500);
 else
@@ -124,7 +124,9 @@ for currentTrial = 1:MaxTrials
         
     end
     disp(['ValveID ' num2str((valveID+1)/2)])
-    Asp = GetValveTimes(S.GUI.AspirationTime,3); AspValveTime = Asp;
+%     Asp = GetValveTimes(S.GUI.AspirationTime,3); 
+Asp=0.3;
+    AspValveTime = Asp;
     %--- Typically, a block of code here will compute variables for assembling this trial's state machine
 %     Thisvalve = ['Valve' num2str(TrialTypes(currentTrial))];
    if S.GUI.TrainingLevel ==1 || S.GUI.TrainingLevel ==2
@@ -145,11 +147,22 @@ for currentTrial = 1:MaxTrials
         'Timer', centralvalvetime,...
         'StateChangeConditions ', {'Tup', 'TasteValveOff'},...
         'OutputActions', {'ValveModule1', valveID}); 
-    
+
     sma = AddState(sma, 'Name', 'TasteValveOff', ... % This example state does nothing, and ends after 0 seconds
         'Timer', 0.01,...
-        'StateChangeConditions', {'Tup', 'CentralForward'},...
+        'StateChangeConditions', {'Tup', 'CentralSpoutDelay'},...
         'OutputActions', {'ValveModule1', valveID+1});
+
+    sma = AddState(sma, 'Name', 'CentralSpoutDelay', ... % This example state does nothing, and ends after 0 seconds
+        'Timer', 0.2,...
+        'StateChangeConditions', {'Tup', 'CentralForward'},...
+        'OutputActions', {});
+
+%     
+%     sma = AddState(sma, 'Name', 'TasteValveOff', ... % This example state does nothing, and ends after 0 seconds
+%         'Timer', 0.01,...
+%         'StateChangeConditions', {'Tup', 'CentralForward'},...
+%         'OutputActions', {'ValveModule1', valveID+1});
  
     sma = AddState(sma, 'Name', 'CentralForward', ... %Central spout moves forward
         'Timer', S.GUI.MotorTime ,...

@@ -11,7 +11,7 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     % Note: Any parameters in S.GUI will be shown in UI edit boxes. 
     % See ParameterGUI plugin documentation to show parameters as other UI types (listboxes, checkboxes, buttons, text)
     S.GUI.Stim_Voltage = 0;
-    S.GUI.ITI = 5;
+    S.GUI.ITI = 6;
     S.GUI.Stim_Time = 2; 
 end
 
@@ -23,13 +23,13 @@ voltages2use=[];
 voltages2use = .5:.5:2; %input the range of voltages to use for opto stim (check these on oscope for accuracy)
 waveNumber={};
 for i=1:length(voltages2use)
-   waveNumber{i} =  repmat(voltages2use(i),1,(3*10000)); %constant outpu
-%      waveNumber{i} =  repmat([repmat(voltages2use(i),1,1000) repmat(2.5,1,500)],1,60); %example of pulsed output
+%    waveNumber{i} =  repmat(voltages2use(i),1,(3*10000)); %constant outpu
+     waveNumber{i} =  repmat([repmat(voltages2use(i),1,1000) repmat(0,1,500)],1,5); %example of pulsed output
 
    W.loadWaveform(i,waveNumber{i})
 end
-waveNumber{length(voltages2use)+1} =  repmat(2.5,1,(6*10000)); %ITI, voltage is set to high (2.5V) so that shutter is off
-W.loadWaveform(length(voltages2use)+1,waveNumber{length(voltages2use)+1});
+% waveNumber{length(voltages2use)+1} =  repmat(2.5,1,(6*10000)); %ITI, voltage is set to high (2.5V) so that shutter is off
+% W.loadWaveform(length(voltages2use)+1,waveNumber{length(voltages2use)+1});
 % generate pseudorandom order to present different voltage sequences
 trial_sequences = repmat(1:length(voltages2use),1,3);
 num_rand_sequences = round(MaxTrials/length(trial_sequences))+1; %generate enough sequences for all the trials

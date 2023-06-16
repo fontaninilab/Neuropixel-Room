@@ -1,4 +1,4 @@
-function Odor2AC_Training1      
+function Odor2AC_Training2      
 global BpodSystem
 global port;
 port=serialport('COM8', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
@@ -35,7 +35,7 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     S.GUI.Up        = 14;
     S.GUI.Down      =   5;
     S.GUI.ResponseTime =5; %10;
-    S.GUI.DrinkTime = 5;
+    S.GUI.DrinkTime = 3;
     S.GUI.RewardAmount = 5; % in ul
     S.GUI.PunishTimeoutDuration =5; %10;
     S.GUI.AspirationTime = 1; 

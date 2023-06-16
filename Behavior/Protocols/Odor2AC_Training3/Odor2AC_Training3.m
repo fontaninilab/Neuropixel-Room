@@ -1,4 +1,4 @@
-function Odor2AC_Training1      
+function Odor2AC_Training3     
 global BpodSystem
 global port;
 port=serialport('COM8', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
@@ -35,11 +35,11 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     S.GUI.Up        = 14;
     S.GUI.Down      =   5;
     S.GUI.ResponseTime =5; %10;
-    S.GUI.DrinkTime = 5;
+    S.GUI.DrinkTime = 3;
     S.GUI.RewardAmount = 5; % in ul
-    S.GUI.PunishTimeoutDuration =5; %10;
+    S.GUI.PunishTimeoutDuration =7; %10;
     S.GUI.AspirationTime = 1; 
-    S.GUI.ITI = 10; %10;
+    S.GUI.ITI = 12; %10;
     
 end
 % set the threshold for the analog input signal to detect events
@@ -55,7 +55,8 @@ A.ResetVoltages = [0.1 0.1 0.1 1.5 1.5 1.5 1.5 1.5]; %Should be at or slightly a
 
 A.SMeventsEnabled = [1 1 1 0 0 0 0 0];
 A.startReportingEvents();
-
+A.scope;
+A.scope_StartStop;
 % Setting the seriers messages for opening the odor valve
 % valve 8 is the vacumm; valve 1 is odor 1; valve 2 is odor 2
 LoadSerialMessages('ValveModule2', {['O' 1], ['C' 1],['O' 2], ['C' 2]});
@@ -114,6 +115,7 @@ for currentTrial = 1:MaxTrials
             odorclose = 2; % serial message ['C' 1]
 
             tastevalvetime = LeftValveTime;
+            leftAction = 'Reward'; rightAction = 'Timeout';
 
 
         case 2  % right trials; delivery of tastant from line 2
@@ -126,11 +128,9 @@ for currentTrial = 1:MaxTrials
             odorclose = 4; % serial message ['C' 2]
 
             tastevalvetime = RightValveTime;
+            leftAction = 'Timeout'; rightAction = 'Reward';
 
     end
-
-    leftAction = 'Reward'; 
-    rightAction = 'Reward'; 
 
     %--- Assemble state machine
     sma = NewStateMachine();
@@ -159,7 +159,7 @@ for currentTrial = 1:MaxTrials
     sma = AddState(sma, 'Name', 'OdorValveOff', ...
     'Timer', 0.01,...
     'StateChangeConditions ', {'Tup', 'MyDelay'},...
-    'OutputActions', {'ValveModule2', odorclose, 'BNC1',0});
+    'OutputActions', {'ValveModule2', odorclose});
 
     % delay
     sma = AddState(sma, 'Name', 'MyDelay', ...
@@ -174,6 +174,12 @@ for currentTrial = 1:MaxTrials
     'OutputActions', {'SoftCode', 3});
 
     % lateral licks
+    sma = AddState(sma, 'Name', 'WaitForLateralLicks', ...
+        'Timer', S.GUI.ResponseTime,...
+        'StateChangeConditions', {'Tup', 'Timeout', 'AnalogIn1_1', leftAction, 'AnalogIn1_2', rightAction},...
+        'OutputActions', {});
+
+    %{
     switch TrialTypes(currentTrial) % with correction
 
           case 1 % left trials; only see whether animals lick left spout
@@ -187,7 +193,7 @@ for currentTrial = 1:MaxTrials
                   'StateChangeConditions', {'Tup', 'Timeout', 'AnalogIn1_2', rightAction},...
                   'OutputActions', {});
      end
-
+    %}
      sma = AddState(sma, 'Name', 'Reward', ... 
     'Timer', tastevalvetime,...
     'StateChangeConditions', {'Tup', 'Drinking'},...

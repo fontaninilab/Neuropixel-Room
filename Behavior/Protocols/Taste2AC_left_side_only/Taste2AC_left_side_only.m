@@ -53,13 +53,14 @@ A.InputRange = {'-2.5V:2.5V',  '-2.5V:2.5V',  '-2.5V:2.5V',  '-5V:5V',  '-10V:10
 %-----------------------------------------
 
 %---Thresholds for optical detectors---
-A.Thresholds = [1 1 1 2 2 2 2 2];
-A.ResetVoltages = [0.1 0.1 0.1 1.5 1.5 1.5 1.5 1.5]; %Should be at or slightly above baseline (check oscilloscope)
+A.Thresholds = [0.8 0.8 0.8 1 2 2 2 2];
+A.ResetVoltages = [0.4 0.4 0.4 0.4 1.5 1.5 1.5 1.5]; %Should be at or slightly above baseline (check oscilloscope)
 %--------------------------------------
 
-A.SMeventsEnabled = [1 1 1 0 0 0 0 0];
+A.SMeventsEnabled = [1 1 1 1 0 0 0 0];
 A.startReportingEvents();
-
+A.scope;
+A.scope_StartStop;
 % Setting the seriers messages for opening the odor valve
 % valve 1 is the vacumm; valve 2 is odor 1; valve 3 is odor 2
 LoadSerialMessages('ValveModule1', {['O' 1], ['C' 1],['O' 2], ['C' 2],['O' 3], ['C' 3], ['O' 4], ['C' 4],['O' 5], ['C' 5],['O' 6], ['C' 6], ['O' 7], ['C' 7], ['O' 8], ['C' 8]});
@@ -93,7 +94,7 @@ disp(['Trial# ' num2str(currentTrial) ' TrialType: ' num2str(TrialTypes(currentT
     ValveCode = 1; ValveTime = LeftValveTime; 
                 
                 
-    AspValveTime = GetValveTimes(S.GUI.AspirationTime,3); 
+     Asp = GetValveTimes(S.GUI.AspirationTime,3); AspValveTime = Asp;
     %--- Typically, a block of code here will compute variables for assembling this trial's state machine
 %     Thisvalve = ['Valve' num2str(TrialTypes(currentTrial))];
  

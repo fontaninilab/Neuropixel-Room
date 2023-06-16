@@ -2,6 +2,7 @@
 
 function Taste2AC_right_side_only      
 global BpodSystem
+global port
 port=serialport('COM8', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
 setDTR(port,true);
 configureTerminator(port,"CR/LF");
