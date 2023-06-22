@@ -6,18 +6,22 @@ P = PulsePalModule('COM5');
 P.phase1Voltage(1) = 10;
 % P.phase2Voltage(1) = 1;
 
-% P.phase1Duration(1) = 0.0125;
-% P.phase1Duration(1) = 0.01875;
-P.phase1Duration(1) = 1.5;
+% P.phase1Duration(1) = 0.222;
+% P.phase1Duration(1) = 0.0375;
+P.phase1Duration(1) = 0.01875;
 
-% P.interPulseInterval(1) = 0.0125;
-P.interPulseInterval(1) =  0.0001;
+% P.phase1Duration(1) = 1.5;
+
+% P.interPulseInterval(1) = 0.0375;
+P.interPulseInterval(1) = 0.01875;
+
+% P.interPulseInterval(1) =  0.0001;
 
 
 % P.interPhaseInterval(1) = 0.025;
 
 %
-P.burstDuration(1) = 0;1
+P.burstDuration(1) = 0;
 % P.interBurstInterval(1) = 0.025;
 
 P.pulseTrainDuration(1) = 1.5;

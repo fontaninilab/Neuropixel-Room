@@ -55,16 +55,16 @@ A.ResetVoltages = [0.1 0.1 0.1 1.5 1.5 1.5 1.5 1.5]; %Should be at or slightly a
 
 A.SMeventsEnabled = [1 1 1 0 0 0 0 0];
 A.startReportingEvents();
-A.scope;
-A.scope_StartStop;
+%A.scope;
+%A.scope_StartStop;
 % Setting the seriers messages for opening the odor valve
 % valve 8 is the vacumm; valve 1 is odor 1; valve 2 is odor 2
-LoadSerialMessages('ValveModule2', {['O' 1], ['C' 1],['O' 2], ['C' 2]});
-LoadSerialMessages('ValveModule3', {['O' 8], ['C' 8]});
+LoadSerialMessages('ValveModule2', {['O' 1], ['C' 1],['O' 2], ['C' 2], ['O' 8], ['C' 8]});
+%LoadSerialMessages('ValveModule3', {['O' 8], ['C' 8]});
 
 % include the block sequence
 if S.GUI.TrainingLevel ~=4
-    trialseq = [1,1,1,2,2,2];
+    trialseq = [2,2,2,2];
     TrialTypes = repmat(trialseq,1,500);
 else
     %break the random sequence into pseudo random (no more than 3 smae trial type in a row)
@@ -101,8 +101,8 @@ for currentTrial = 1:MaxTrials
     S = BpodParameterGUI('sync', S); % Sync parameters with BpodParameterGUI plugin
     R = GetValveTimes(S.GUI.RewardAmount, [1 2]); LeftValveTime = R(1); RightValveTime = R(2); % Update reward amounts
 
-    vaccuumon = 2;
-    vaccuumoff = 1;
+    vaccuumon = 6;
+    vaccuumoff = 5;
 
     switch TrialTypes(currentTrial)
         case 1  % left trials; delivery of tastant from line 1
@@ -147,13 +147,13 @@ for currentTrial = 1:MaxTrials
     sma = AddState(sma, 'Name', 'VaccuumOff', ... 
         'Timer', S.GUI.SamplingDuration,...
         'StateChangeConditions', {'Tup', 'VaccuumOn'},...
-        'OutputActions', {'ValveModule3', vaccuumoff, 'BNC1', 1});
+        'OutputActions', {'ValveModule2', vaccuumoff, 'BNC1', 1});
 
     % vaccuum on - ODOR REMOVED
     sma = AddState(sma, 'Name', 'VaccuumOn', ... 
     'Timer', 0.01,...
     'StateChangeConditions', {'Tup', 'OdorValveOff'},...
-    'OutputActions', {'ValveModule3', vaccuumon, 'BNC1', 0});
+    'OutputActions', {'ValveModule2', vaccuumon, 'BNC1', 0});
 
     % close nitrogen valve
     sma = AddState(sma, 'Name', 'OdorValveOff', ...

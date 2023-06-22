@@ -55,16 +55,16 @@ A.ResetVoltages = [0.4 0.4 0.4 0.4 1.5 1.5 1.5 1.5]; %Should be at or slightly a
 
 A.SMeventsEnabled = [1 1 1 1 0 0 0 0];
 A.startReportingEvents();
-A.scope;
-A.scope_StartStop;
+% A.scope;
+% A.scope_StartStop;
 % Setting the seriers messages for opening the odor valve
 
 LoadSerialMessages('ValveModule1', {['O' 1], ['C' 1],['O' 2], ['C' 2],['O' 3], ['C' 3], ['O' 4], ['C' 4],['O' 5], ['C' 5],['O' 6], ['C' 6], ['O' 7], ['C' 7], ['O' 8], ['C' 8]});
 
 % include the block sequence
 if S.GUI.TrainingLevel ~=4
-%   trialseq = [2,2,2,1,1,1];
-    trialseq = [1,1,1,2,2,2];
+   trialseq = [2,2,2,1,1,1];
+ %    trialseq = [1,1,1,2,2,2];
     TrialTypes = repmat(trialseq,1,500);
 else
     %break the random sequence into pseudo random (no more than 3 smae trial type in a row)
@@ -98,7 +98,9 @@ TotalRewardDisplay('init');
 % valvetimes=[0.150458130337149	0.160746583692705	0.152059845422960	0.157146050670641	0.141205070469519	0.156701807228916	0.144298282574621	0.236136720907507]; %3ul 1/15/23
 % valvetimes= [0.165985997666278	0.191054274860800	0.168374243380742	0.244740371592747	0.157926149928378	0.173459503617832	0.159958475456028	0.206682660645404]; %3ul 10/26/22
 % valvetimes= [0.233448793485195	0.237617872714368	0.191379735900284	0.191379735900284	0.191379735900284	0.191379735900284	0.191379735900284	0.246900099087269]; %4ul 5/10/23
- valvetimes= [0.232420902410882	0.237617872714368	0.188261051628414	0.194688384124161	0.191379735900284	0.191379735900284	0.191379735900284	0.245306682107329]; %4ul 6/6/23
+%  valvetimes= [0.232420902410882	0.237617872714368	0.188261051628414	0.194688384124161	0.191379735900284	0.191379735900284	0.191379735900284	0.245306682107329]; %4ul 6/6/23
+valvetimes= [0.170175198882614	0.168330685774158	0.129059122511895	0.128404332713604	0.135159131734474	0.135159131734474	0.135159131734474	0.179362188070480]; %3ul 6/6/23
+
 
 %% Main loop (runs once per trial)
 for currentTrial = 1:MaxTrials
@@ -124,9 +126,9 @@ for currentTrial = 1:MaxTrials
         
     end
     disp(['ValveID ' num2str((valveID+1)/2)])
-%     Asp = GetValveTimes(S.GUI.AspirationTime,3); 
-Asp=0.3;
-    AspValveTime = Asp;
+    Asp = GetValveTimes(S.GUI.AspirationTime,3); AspValveTime = Asp;
+% Asp=0.3;
+    
     %--- Typically, a block of code here will compute variables for assembling this trial's state machine
 %     Thisvalve = ['Valve' num2str(TrialTypes(currentTrial))];
    if S.GUI.TrainingLevel ==1 || S.GUI.TrainingLevel ==2

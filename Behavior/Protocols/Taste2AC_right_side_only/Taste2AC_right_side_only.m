@@ -13,7 +13,7 @@ MaxTrials = 10000; % Set to some sane value, for preallocation
 
 TrialTypes = ceil(rand(1,MaxTrials)*2);
 
-valveN = 8; %Valve number
+valveN = 1; %Valve number
 valveID = (2*valveN)-1;
 
 %--- Define parameters and trial structure
@@ -54,7 +54,7 @@ A.InputRange = {'-5V:5V',  '-5V:5V',  '-5V:5V',  '-5V:5V',  '-10V:10V', '-10V:10
 
 %---Thresholds for optical detectors---
 A.Thresholds = [1 1 1 2 2 2 2 2];
-A.ResetVoltages = [0.1 0.1 0.1 1.5 1.5 1.5 1.5 1.5]; %Should be at or slightly above baseline (check oscilloscope)
+A.ResetVoltages = [0.4 0.4 0.4 1.5 1.5 1.5 1.5 1.5]; %Should be at or slightly above baseline (check oscilloscope)
 %--------------------------------------
 
 A.SMeventsEnabled = [1 1 1 0 0 0 0 0];

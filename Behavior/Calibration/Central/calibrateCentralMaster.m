@@ -32,7 +32,7 @@ fprintf(' Conversion for valve %d complete\n',valveN)
 fprintf('**********************************\n')
 
 %% --- Calculate valve times for desired output volume ---
-rewardamt = 4; % Output volume in uL
+rewardamt = 3; % Output volume in uL
 valveTimes = getValveTimesCentral(rewardamt);
 
 
