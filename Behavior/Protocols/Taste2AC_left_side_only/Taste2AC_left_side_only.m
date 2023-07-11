@@ -29,7 +29,7 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     S.GUI.TasteLeft = 'Taste1';
     S.GUI.TasteRight = 'Taste2';
     S.GUI.DelayDuration = 1.5;
-    S.GUI.TastantAmount = 0.25;
+    S.GUI.TastantAmount = 0.3;
     S.GUI.MotorTime = 0.5;
     S.GUI.Up        = 14;
     S.GUI.Down      =   5;
@@ -195,7 +195,7 @@ disp(['Trial# ' num2str(currentTrial) ' TrialType: ' num2str(TrialTypes(currentT
         'OutputActions', {'SoftCode', 5});
     
      sma = AddState(sma, 'Name', 'VacumnOn', ...
-        'Timer', AspValveTime ,...
+        'Timer', S.GUI.AspirationTime ,...
         'StateChangeConditions', {'Tup', 'AspirationDown'},...
         'OutputActions', {'ValveState', 4});
     

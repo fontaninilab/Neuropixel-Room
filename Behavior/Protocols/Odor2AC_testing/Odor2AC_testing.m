@@ -1,4 +1,4 @@
-function Odor2AC_Training3     
+function Odor2AC_Training4     
 global BpodSystem
 global port;
 port=serialport('COM8', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
@@ -25,7 +25,7 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     % See ParameterGUI plugin documentation to show parameters as other UI types (listboxes, checkboxes, buttons, text)
     %     S.GUI = struct;
     
-    S.GUI.TrainingLevel = 1;
+    S.GUI.TrainingLevel = 4;
     S.GUI.SamplingDuration = 2;
     S.GUI.TasteLeft =1; %Taste1;
     S.GUI.TasteRight = 2;%Taste2;
@@ -37,9 +37,9 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     S.GUI.ResponseTime =5; %10;
     S.GUI.DrinkTime = 3;
     S.GUI.RewardAmount = 5; % in ul
-    S.GUI.PunishTimeoutDuration =5; %10;
+    S.GUI.PunishTimeoutDuration =10; %10;
     S.GUI.AspirationTime = 1; 
-    S.GUI.ITI = 12;%2; %10;
+    S.GUI.ITI = 15;
     
 end
 % set the threshold for the analog input signal to detect events
@@ -64,7 +64,7 @@ LoadSerialMessages('ValveModule2', {['O' 1], ['C' 1],['O' 2], ['C' 2], ['O' 8], 
 
 % include the block sequence
 if S.GUI.TrainingLevel ~=4
-    trialseq = [1,1,1,2,2,2];
+    trialseq = [2,2];
     TrialTypes = repmat(trialseq,1,500);
 else
     %break the random sequence into pseudo random (no more than 3 smae trial type in a row)
@@ -93,6 +93,8 @@ BpodParameterGUI('init', S); % Initialize parameter GUI plugin
 BpodSystem.SoftCodeHandlerFunction = 'SoftCodeHandler_MoveZaber';
 
 odorvalvetimes = [1 1];
+
+ITI_rand_vals = [0 1 2 3 4 5];
 
 %% Main loop (runs once per trial)
 
@@ -131,29 +133,38 @@ for currentTrial = 1:MaxTrials
             leftAction = 'Timeout'; rightAction = 'Reward';
 
     end
+    
+    % vary ITI
+    r = randi([1 6]);
+    ITI_rand = ITI_rand_vals(r);
 
     %--- Assemble state machine
     sma = NewStateMachine();
 
     % ---- TRIAL START -----
 
+    sma = AddState(sma,'Name','Initiation',... % Initiation of a new trial with 2 s baseline
+        'Timer',2,...
+        'StateChangeConditions', {'Tup', 'OdorValveOn'},...
+        'OutputActions',{'BNCState',1});
+
     % open nitogen valve
     sma = AddState(sma, 'Name', 'OdorValveOn', ... %Open specific odor valve
         'Timer', odorvalvetime,...
         'StateChangeConditions ', {'Tup', 'VaccuumOff'},...
-        'OutputActions', {'ValveModule2', odoropen}); 
+        'OutputActions', {'ValveModule2', odoropen,'BNCState',0}); 
 
     % vaccuum off - ODOR DELIVERED
     sma = AddState(sma, 'Name', 'VaccuumOff', ... 
         'Timer', S.GUI.SamplingDuration,...
         'StateChangeConditions', {'Tup', 'VaccuumOn'},...
-        'OutputActions', {'ValveModule2', vaccuumoff, 'BNC1', 1});
+        'OutputActions', {'ValveModule2', vaccuumoff});
 
     % vaccuum on - ODOR REMOVED
     sma = AddState(sma, 'Name', 'VaccuumOn', ... 
     'Timer', 0.01,...
     'StateChangeConditions', {'Tup', 'OdorValveOff'},...
-    'OutputActions', {'ValveModule2', vaccuumon, 'BNC1', 0});
+    'OutputActions', {'ValveModule2', vaccuumon});
 
     % close nitrogen valve
     sma = AddState(sma, 'Name', 'OdorValveOff', ...
@@ -215,7 +226,7 @@ for currentTrial = 1:MaxTrials
     'OutputActions', {'SoftCode', 4});
 
      sma = AddState(sma, 'Name', 'ITI', ...
-    'Timer', S.GUI.ITI,...
+    'Timer', S.GUI.ITI + ITI_rand,...
     'StateChangeConditions', {'Tup', '>exit'},...
     'OutputActions', {});
     

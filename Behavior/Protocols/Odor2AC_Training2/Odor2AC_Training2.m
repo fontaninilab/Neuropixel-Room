@@ -26,10 +26,10 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     %     S.GUI = struct;
     
     S.GUI.TrainingLevel = 1;
-    S.GUI.SamplingDuration = 5;
+    S.GUI.SamplingDuration = 2;
     S.GUI.TasteLeft =1; %Taste1;
     S.GUI.TasteRight = 2;%Taste2;
-    S.GUI.DelayDuration = 1.5;
+    S.GUI.DelayDuration = 1;
     S.GUI.TastantAmount = 0.05;
     S.GUI.MotorTime = 0.5;
     S.GUI.Up        = 14;
@@ -39,7 +39,7 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     S.GUI.RewardAmount = 5; % in ul
     S.GUI.PunishTimeoutDuration =5; %10;
     S.GUI.AspirationTime = 1; 
-    S.GUI.ITI = 10; %10;
+    S.GUI.ITI = 12; %10;
     
 end
 % set the threshold for the analog input signal to detect events
@@ -50,7 +50,7 @@ A.InputRange = {'-5V:5V',  '-5V:5V',  '-5V:5V',  '-5V:5V',  '-10V:10V', '-10V:10
 
 %---Thresholds for optical detectors---
 A.Thresholds = [1 1 1 2 2 2 2 2];
-A.ResetVoltages = [0.1 0.1 0.1 1.5 1.5 1.5 1.5 1.5]; %Should be at or slightly above baseline (check oscilloscope)
+A.ResetVoltages = [0.4 0.4 0.1 1.5 1.5 1.5 1.5 1.5]; %Should be at or slightly above baseline (check oscilloscope)
 %--------------------------------------
 
 A.SMeventsEnabled = [1 1 1 0 0 0 0 0];
@@ -58,8 +58,7 @@ A.startReportingEvents();
 
 % Setting the seriers messages for opening the odor valve
 % valve 8 is the vacumm; valve 1 is odor 1; valve 2 is odor 2
-LoadSerialMessages('ValveModule2', {['O' 1], ['C' 1],['O' 2], ['C' 2]});
-LoadSerialMessages('ValveModule3', {['O' 8], ['C' 8]});
+LoadSerialMessages('ValveModule2', {['O' 1], ['C' 1],['O' 2], ['C' 2],['O' 8], ['C' 8]});
 
 % include the block sequence
 if S.GUI.TrainingLevel ~=4
@@ -100,8 +99,8 @@ for currentTrial = 1:MaxTrials
     S = BpodParameterGUI('sync', S); % Sync parameters with BpodParameterGUI plugin
     R = GetValveTimes(S.GUI.RewardAmount, [1 2]); LeftValveTime = R(1); RightValveTime = R(2); % Update reward amounts
 
-    vaccuumon = 2;
-    vaccuumoff = 1;
+    vaccuumon = 6;
+    vaccuumoff = 5;
 
     switch TrialTypes(currentTrial)
         case 1  % left trials; delivery of tastant from line 1
@@ -147,19 +146,19 @@ for currentTrial = 1:MaxTrials
     sma = AddState(sma, 'Name', 'VaccuumOff', ... 
         'Timer', S.GUI.SamplingDuration,...
         'StateChangeConditions', {'Tup', 'VaccuumOn'},...
-        'OutputActions', {'ValveModule3', vaccuumoff, 'BNC1', 1});
+        'OutputActions', {'ValveModule2', vaccuumoff, 'BNC1', 1});
 
     % vaccuum on - ODOR REMOVED
     sma = AddState(sma, 'Name', 'VaccuumOn', ... 
     'Timer', 0.01,...
     'StateChangeConditions', {'Tup', 'OdorValveOff'},...
-    'OutputActions', {'ValveModule3', vaccuumon, 'BNC1', 0});
+    'OutputActions', {'ValveModule2', vaccuumon, 'BNC1', 0});
 
     % close nitrogen valve
     sma = AddState(sma, 'Name', 'OdorValveOff', ...
     'Timer', 0.01,...
     'StateChangeConditions ', {'Tup', 'MyDelay'},...
-    'OutputActions', {'ValveModule2', odorclose, 'BNC1',0});
+    'OutputActions', {'ValveModule2', odorclose});
 
     % delay
     sma = AddState(sma, 'Name', 'MyDelay', ...

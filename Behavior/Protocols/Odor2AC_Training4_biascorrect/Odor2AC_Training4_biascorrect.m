@@ -1,4 +1,4 @@
-function Odor2AC_Training3     
+function Odor2AC_Training4_biascorrect     
 global BpodSystem
 global port;
 port=serialport('COM8', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
@@ -25,7 +25,7 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     % See ParameterGUI plugin documentation to show parameters as other UI types (listboxes, checkboxes, buttons, text)
     %     S.GUI = struct;
     
-    S.GUI.TrainingLevel = 1;
+    S.GUI.TrainingLevel = 4;
     S.GUI.SamplingDuration = 2;
     S.GUI.TasteLeft =1; %Taste1;
     S.GUI.TasteRight = 2;%Taste2;
@@ -37,9 +37,11 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     S.GUI.ResponseTime =5; %10;
     S.GUI.DrinkTime = 3;
     S.GUI.RewardAmount = 5; % in ul
-    S.GUI.PunishTimeoutDuration =5; %10;
+    S.GUI.PunishTimeoutDuration =10; %10;
     S.GUI.AspirationTime = 1; 
-    S.GUI.ITI = 12;%2; %10;
+    S.GUI.ITI = 15;
+    S.GUI.bias_corr_start=10;
+
     
 end
 % set the threshold for the analog input signal to detect events
@@ -64,7 +66,7 @@ LoadSerialMessages('ValveModule2', {['O' 1], ['C' 1],['O' 2], ['C' 2], ['O' 8], 
 
 % include the block sequence
 if S.GUI.TrainingLevel ~=4
-    trialseq = [1,1,1,2,2,2];
+    trialseq = [2,2,2,1,1,1];
     TrialTypes = repmat(trialseq,1,500);
 else
     %break the random sequence into pseudo random (no more than 3 smae trial type in a row)
@@ -97,7 +99,36 @@ odorvalvetimes = [1 1];
 %% Main loop (runs once per trial)
 
 for currentTrial = 1:MaxTrials
-    disp(['Trial# ' num2str(currentTrial) ' TrialType: ' num2str(TrialTypes(currentTrial))])
+   bias_corr_start=S.GUI.bias_corr_start;
+    if currentTrial>bias_corr_start
+    random_number = rand(1,1);
+    
+    trialType_history = BpodSystem.Data.TrialSequence(currentTrial-bias_corr_start:currentTrial-1);
+    Outcomes1 = zeros(1,bias_corr_start);
+    for x = 1: bias_corr_start
+        if ~isnan(BpodSystem.Data.RawEvents.Trial{currentTrial-bias_corr_start-1+x}.States.Reward(1))
+            Outcomes1(x) = 1;
+        elseif ~isnan(BpodSystem.Data.RawEvents.Trial{currentTrial-bias_corr_start-1+x}.States.Timeout(1))
+            Outcomes1(x) = 0;
+        end         
+    end
+    num_left_choices = length(intersect(find(trialType_history == 1), find(Outcomes1==1)))+length(intersect(find(trialType_history == 2), find(Outcomes1==0)));
+    bias_correction = num_left_choices/bias_corr_start;
+      S.GUI.BiasCorrection =  bias_correction;
+    if random_number>= bias_correction;%(bias_correction+0.1) % make right:left 60:40
+        TrialTypes(currentTrial) = 1;
+    else
+        TrialTypes(currentTrial) = 2;
+    end
+%       disp(['Trial# ' num2str(currentTrial) ' TrialType: ' num2str(TrialTypes(currentTrial)) 'outcomes ' string(Outcomes1) 'history' string(trialType_history)  ])
+    disp(['Trial# ' num2str(currentTrial) ' TrialType: ' num2str(TrialTypes(currentTrial)) ])
+ 
+    else
+      
+         disp(['Trial# ' num2str(currentTrial) ' TrialType: ' num2str(TrialTypes(currentTrial)) ])
+ 
+    end
+   % disp(['Trial# ' num2str(currentTrial) ' TrialType: ' num2str(TrialTypes(currentTrial))])
     S = BpodParameterGUI('sync', S); % Sync parameters with BpodParameterGUI plugin
     R = GetValveTimes(S.GUI.RewardAmount, [1 2]); LeftValveTime = R(1); RightValveTime = R(2); % Update reward amounts
 
