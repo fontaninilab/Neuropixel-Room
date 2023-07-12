@@ -1,7 +1,9 @@
 function Taste2AC_Training4
 global BpodSystem
 global port;
-port=serialport('COM8', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
+global currentTrial;
+global ZaberTime;
+port=serialport('COM9', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
 configureTerminator(port,"CR/LF");
 setDTR(port,true);
 fopen(port); %line 2-5 added 6/6/23 to control motor
@@ -12,8 +14,8 @@ MaxTrials = 10000; % Set to some sane value, for preallocation
 
 TrialTypes = ceil(rand(1,MaxTrials)*2);
 
-valve1 = 5; v1 = (2*valve1)-1;
-valve2 = 4; v2 = (2*valve2)-1;
+valve1 = 7; v1 = (2*valve1)-1;
+valve2 = 2; v2 = (2*valve2)-1;
 
 %--- Define parameters and trial structure
 S = BpodSystem.ProtocolSettings; % Loads settings file chosen in launch manager into current workspace as a struct called 'S'
@@ -282,6 +284,7 @@ for currentTrial = 1:MaxTrials
         BpodSystem.Data.TrialSequence(currentTrial) = TrialTypes(currentTrial);
         BpodSystem.Data = BpodNotebook('sync', BpodSystem.Data); % Sync with Bpod notebook plugin
         BpodSystem.Data.TrialSettings(currentTrial) = S; % Adds the settings used for the current trial to the Data struct (to be saved after the trial ends)
+        BpodSystem.Data.ZaberTime=ZaberTime;
         SaveBpodSessionData; % Saves the field BpodSystem.Data to the current data file
 
         %--- Typically a block of code here will update online plots using the newly updated BpodSystem.Data
