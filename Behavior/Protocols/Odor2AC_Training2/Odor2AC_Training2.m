@@ -1,7 +1,7 @@
 function Odor2AC_Training2      
 global BpodSystem
 global port;
-port=serialport('COM8', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
+port=serialport('COM9', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
 setDTR(port,true);
 configureTerminator(port,"CR/LF");
 fopen(port); %line 2-5 added 6/6/23 to control motor

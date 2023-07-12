@@ -1,7 +1,7 @@
 function Taste2AC_Training4_bias_correction
 global BpodSystem
 global port;
-port=serialport('COM8', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
+port=serialport('COM9', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
 configureTerminator(port,"CR/LF");
 setDTR(port,true);
 fopen(port); %line 2-5 added 6/6/23 to control motor
@@ -11,8 +11,8 @@ fopen(port); %line 2-5 added 6/6/23 to control motor
 MaxTrials = 350; % Set to some sane value, for preallocation
 
 TrialTypes = ceil(rand(1,MaxTrials)*2);
-valve1 = 5; v1 = (2*valve1)-1;
-valve2 = 4; v2 = (2*valve2)-1;
+valve1 = 2; v1 = (2*valve1)-1;
+valve2 = 7; v2 = (2*valve2)-1;
 
 %--- Define parameters and trial structure
 S = BpodSystem.ProtocolSettings; % Loads settings file chosen in launch manager into current workspace as a struct called 'S'
