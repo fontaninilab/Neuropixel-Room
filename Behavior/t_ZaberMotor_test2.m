@@ -11,7 +11,7 @@ tic
 %     'Parity', 'none', ...
 %     'StopBits', 1, ...
 %     'Terminator','CR/LF');
-port=serialport("COM8",115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
+port=serialport("COM9",115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
 configureTerminator(port,"CR/LF");
 % warning off MATLAB:serial:fgetl:unsuccessfulRead %To suppress warning
 % message
@@ -39,5 +39,5 @@ toc
 % device.moveabsolute(position); % Tell the device to move.
 
 % fclose(port);
-port=[];
+clear port
 end
