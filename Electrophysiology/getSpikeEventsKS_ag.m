@@ -1,4 +1,4 @@
-function [spikes,events,fs,cellInfo,labels] = getSpikeEventsKS(myPath)
+function [spikes,events,fs,cellInfo,labels] = getSpikeEventsKS_ag(myPath)
 %
 % This function loads spikes, events, and other cell info from
 % kilosort-sorted data recorded by spikeGLX.
@@ -33,8 +33,8 @@ nameChunks = strsplit(fileChunks{end},'_');
 %        Extract events
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[trialStartEv, fsEv] = loadEventDataSGLX(myPath,'D');
-[lickEv, ~ ] =  loadEventDataSGLX(myPath,'A',[1 2 3],{'central','left','right'});
+[trialStartEv, fsEv] = loadEventDataSGLX_ag(myPath,'D');
+[lickEv, ~ ] =  loadEventDataSGLX_ag(myPath,'A',[1 2 3],{'central','left','right'});
 
 % Save all event info in one
 events.MouseID = nameChunks{1};
@@ -64,16 +64,29 @@ events.fsEv = fsEv;
 % % ap_metaName = [fileChunks{end} '_t0.imec0.ap.meta']; %Name of ap.meta file
 % % ap_meta = SGLXReadMeta(ap_metaName, [myPath '\' fileChunks{end} '_imec0']);
 
-ap_metaName = [fileChunks{end} '_t0_CAR.imec.ap.meta']; %Name of ap.meta file
-ap_meta = SGLXReadMeta(ap_metaName, [myPath '\' fileChunks{end} '_CAR']);
+% ap_metaName = [fileChunks{end} '_t0_CAR.imec.ap.meta']; %Name of ap.meta file
+%ap_metaName = [fileChunks{end} '_tcat.imec0.ap.meta']; %Name of ap.meta file
+% ap_meta = SGLXReadMeta(ap_metaName, [myPath '\' fileChunks{end} '_CAR']);
+% ap_meta = SGLXReadMeta(ap_metaName, [myPath '\' fileChunks{end} '_tcat']);
+%ap_meta = SGLXReadMeta(ap_metaName,[myPath '\']);
+
+%ap_metaName = [fileChunks{end} '_t0_CAR.imec.ap.meta'] %Name of ap.meta file
+ap_metaName =  'AG05_test1_g0_t0_CAR.imec.ap.meta';
+ %Name of ap.meta file
+ap_meta = SGLXReadMeta(ap_metaName, myPath)
 fs = str2double(ap_meta.imSampRate);
 
 %%%%%%%% 2. Load spike times and cluster IDs %%%%%%%%
 % % spks = double(readNPY(fullfile([myPath '\' fileChunks{end} '_imec0'],'spike_times.npy'))) / fs;
 % % clust  = double(readNPY(fullfile([myPath '\' fileChunks{end} '_imec0'],'spike_clusters.npy')));
 
-spks = double(readNPY(fullfile([myPath '\' fileChunks{end} '_CAR'],'spike_times.npy'))) / fs;
-clust  = double(readNPY(fullfile([myPath '\' fileChunks{end} '_CAR'],'spike_clusters.npy')));
+% spks = double(readNPY(fullfile([myPath '\' fileChunks{end} '_CAR'],'spike_times.npy'))) / fs;
+% clust  = double(readNPY(fullfile([myPath '\' fileChunks{end} '_CAR'],'spike_clusters.npy')));
+% spks = double(readNPY(fullfile([myPath '\' fileChunks{end} '_tcat'],'spike_times.npy'))) / fs;
+% clust  = double(readNPY(fullfile([myPath '\' fileChunks{end} '_tcat'],'spike_clusters.npy')));
+spks = double(readNPY(fullfile([myPath],'spike_times.npy'))) / fs;
+clust  = double(readNPY(fullfile([myPath],'spike_clusters.npy')));
+
 
 % load cluster groups
 opts = delimitedTextImportOptions("NumVariables", 4);
@@ -81,7 +94,9 @@ opts.DataLines = [2, Inf];
 opts.Delimiter = "\t";
 opts.VariableNames = ["id", "Amplitude", "ContamPct", "KSLabel", "amp", "ch", "depth", "fr", "group", "n_spikes", "sh"];
 opts.VariableTypes = ["double", "double", "double", "char", "double", "double", "double", "double", "char", "double", "double"];
-dat = readtable([myPath '\' fileChunks{end} '_CAR\cluster_info.tsv'],opts);
+%dat = readtable([myPath '\' fileChunks{end} '_tcat\cluster_info.tsv'],opts);
+dat = readtable([myPath '\cluster_info.tsv'],opts);
+
 
 % discard noise clusters
 clustID = dat.id(~contains(dat.group,'noise'));

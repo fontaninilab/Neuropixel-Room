@@ -1,4 +1,4 @@
-function [Ev, fsEv] = loadEventDataSGLX(myPath,dataType, ch, chanID)
+function [Ev, fsEv] = loadEventDataSGLX_ag(myPath,dataType, ch, chanID)
 %[lickEv, trialStartEv, fsEv] = loadEventDataSGLX(myPath,dataType, ch)
 %
 % Extract event data from Spike GLX file formats where events are recorded
@@ -20,8 +20,17 @@ function [Ev, fsEv] = loadEventDataSGLX(myPath,dataType, ch, chanID)
 fileChunks = strsplit(myPath,'\');
 nameChunks = strsplit(fileChunks{end},'_');
 
-NI_binName = [fileChunks{end} '_t0.nidq.bin'];
+if strcmp(nameChunks{end},'CAR')
+    fileChunks2 = strsplit(fileChunks{end},'_CAR');
+    NI_binName = [fileChunks2{1} '.nidq.bin'];
+
+else
+    NI_binName = [fileChunks{end} '.nidq.bin'];
+end
+
+%NI_meta = SGLXReadMeta(NI_binName, [myPath '_CAR']);
 NI_meta = SGLXReadMeta(NI_binName, myPath);
+
 fsEv = str2double(NI_meta.niSampRate);
 
 %Extract # of samples
@@ -29,7 +38,7 @@ nChan = str2double(NI_meta.nSavedChans);
 nFileSamp = str2double(NI_meta.fileSizeBytes) / (2 * nChan);
 nSamp = nFileSamp;
 
-dataArray = SGLXReadBin(0, nSamp, NI_meta, NI_binName, myPath); %Loads data from both analog and digital channels
+dataArray = SGLXReadBin_ag(0, nSamp, NI_meta, NI_binName, myPath); %Loads data from both analog and digital channels
 
 
 %%% 1. Load analog channel data (these are the lick events) %%%
@@ -49,8 +58,8 @@ if strcmp(dataType,'A')
     end
 
     %Extract lick indices from data array
-    for i = 1:length(lickChanID)
-        lickIDX = find(dataArrayA(i,:)>0.02);
+    for i = 2:length(lickChanID)
+        lickIDX = find(dataArrayA(i,:)>0.5);
         lickIDXdiff = diff(lickIDX);
         lickstart = find(lickIDXdiff > 1) + 1;
         firsttrial = 1;

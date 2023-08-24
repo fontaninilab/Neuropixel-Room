@@ -9,7 +9,7 @@
 %%
 % 1. Run Kilosort on raw data. Follow instructions in spike sorting manual
 
-kilosort;
+%kilosort;
 
 % 2. Open in phy to choose bad channels. Usually ~200/250->385.
 %
@@ -20,11 +20,15 @@ kilosort;
 %%
 % 3. Run common average reference (will save in new folder _CAR)
 
-MouseID = 'JMB024';
-SessionID = 'Session1';
-badchanIDX = [240:385];
+%MouseID = 'CZN06';
+%SessionID = 'p11';
+%badchanIDX = [221:385];
 
-CommonAverageReferenceSGLX(MouseID, SessionID, badchanIDX);
+MouseID = 'AG05';
+SessionID = 'test1_2';
+badchanIDX = [210:385];
+
+CommonAverageReferenceSGLX_ag(MouseID, SessionID, badchanIDX);
 
 %%
 % 4. Run kilosort again on CAR .ap file
@@ -38,4 +42,4 @@ kilosort;
 % 5. Extract spike data for each cluster and (optionally) also BPOD
 % behavior data.
 
-analyzeClusterKS;
+%analyzeClusterKS;
