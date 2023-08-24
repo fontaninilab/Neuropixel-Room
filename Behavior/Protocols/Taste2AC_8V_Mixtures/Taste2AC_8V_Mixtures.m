@@ -1,17 +1,24 @@
 function Taste2AC_8V_Mixtures   
 global BpodSystem
-
+global port;
+port=serialport('COM8', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
+configureTerminator(port,"CR/LF");
+setDTR(port,true);
+fopen(port); %line 2-5 added 6/6/23 to control motor
+%to account for faster motor reaction time, added CentralSpoutDelay(0.2),
+%CentralDrink (S.GUI.CentralDrinkTime=0.75), CentralSpoutBack (which adds effective delay duration); decreased MyDelay (S.GUI.DelayDuration=1.4). 
 %% Setup (runs once before the first trial)
 MaxTrials = 400; % Set to some sane value, for preallocation
 TrialTypes = ceil(rand(1,MaxTrials)*2);
-
+% to change directions 14-15 31-32 91-95 166-183
 % % % Pad start with 12 blocked trials % % %
 
 nPad = 2;
 trialseq = [1,1,1,2,2,2];
 TrialTypePad = repmat(trialseq,1,nPad);
-
-valveseq = [1,1,1,8,8,8];
+% 
+ valveseq = [1,1,1,8,8,8];
+% valveseq = [8,8,8,1,1,1];
 ValveSeqPad = repmat(valveseq,1,nPad);
 
 % % % % % % % % % % % % % % % % % % % % % % %
@@ -28,7 +35,8 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     S.GUI.SamplingDuration = 3;
     S.GUI.TasteLeft = 'Salt';
     S.GUI.TasteRight = 'Sucrose';
-    S.GUI.DelayDuration = 2;
+%     S.GUI.DelayDuration = 2;
+    S.GUI.DelayDuration = 1.4;
     S.GUI.TastantAmount = 0.05;
     S.GUI.MotorTime = 0.5;
     S.GUI.Up        = 14;
@@ -39,7 +47,8 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     S.GUI.PunishTimeoutDuration = 10;
     S.GUI.AspirationTime = 1; 
     S.GUI.ITI = 10;
-    
+    S.GUI.CentralDrinkTime=0.75;
+    %centralspoutback is fixed 0.3
 end
 % set the threshold for the analog input signal to detect events
 A = BpodAnalogIn('COM6');
@@ -53,13 +62,12 @@ A.InputRange = {'-2.5V:2.5V',  '-2.5V:2.5V',  '-2.5V:2.5V',  '-5V:5V',  '-10V:10
 %-----------------------------------------
 
 %---Thresholds for optical detectors---
-A.Thresholds = [1 1 1 2 2 2 2 2];
-A.ResetVoltages = [0.1 0.1 0.1 1.5 1.5 1.5 1.5 1.5]; %Should be at or slightly above baseline (check oscilloscope)
+A.Thresholds = [1 1 1 1 2 2 2 2];
+A.ResetVoltages = [0.4 0.4 0.4 0.4 1.5 1.5 1.5 1.5]; %Should be at or slightly above baseline (check oscilloscope)
 %--------------------------------------
 
-A.SMeventsEnabled = [1 1 1 0 0 0 0 0];
+A.SMeventsEnabled = [1 1 1 1 0 0 0 0];
 A.startReportingEvents();
-
 
 % Setting the seriers messages for opening the odor valve
 % valve 1 is the vacumm; valve 2 is odor 1; valve 3 is odor 2
@@ -89,7 +97,9 @@ end
 
 ValveSeq = TrialTypes;
 Type1ValveIDX = 1:4;
-Type2ValveIDX = 5:8;
+%Type1ValveIDX = 5:8;
+  Type2ValveIDX = 5:8;
+%Type2ValveIDX = 1:4;
 nRep = 4; %Number of repeats of each valve # per "block"
 
 nSeq = ceil(length(ValveSeq)/(2*nRep*length(Type1ValveIDX))) + 5; %How many blocks of nRep per trial type
@@ -131,13 +141,14 @@ TrialTypeOutcomePlot(BpodSystem.GUIHandles.OutcomePlot,'init',TrialTypes);
 %--- Initialize plots and start USB connections to any modules
 BpodParameterGUI('init', S); % Initialize parameter GUI plugin
 
-BpodSystem.SoftCodeHandlerFunction = 'SoftCodeHandler_MoveZaber';
+BpodSystem.SoftCodeHandlerFunction = 'SoftCodeHandler_MoveZaber2';
 
 % TotalRewardDisplay('init'); 
 
-valvetimes = [0.17 0.18 0.16 0.17 0.15 0.18 0.16 0.19]; %3ul - Dec 09, 2021
+% valvetimes= [0.232420902410882	0.237617872714368	0.188261051628414	0.194688384124161	0.191379735900284	0.191379735900284	0.191379735900284	0.245306682107329]; %4ul 6/6/23
+valvetimes= [0.365754925924651	0.307617872714368	0.308261051628414	0.304688384124161	0.311379735900284	0.301379735900284	0.301379735900284	0.339864620046774]; % 4ul 6/29/23 measured horz
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Reminder to press record
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -158,28 +169,30 @@ for currentTrial = 1:MaxTrials
     R = GetValveTimes(S.GUI.RewardAmount, [1 2]); LeftValveTime = R(1); RightValveTime = R(2); % Update reward amounts
     if S.GUI.TrainingLevel ~=5 % context
         switch TrialTypes(currentTrial)
-            
-            case 1 
-                 if ismember(ValveSeq(currentTrial),[1:4])
-                     valveID = 2*ValveSeq(currentTrial)-1;
-                 end
+
+            case 1
+                                 if ismember(ValveSeq(currentTrial),[1:4])
+             %   if ismember(ValveSeq(currentTrial),[5:8])
+                    valveID = 2*ValveSeq(currentTrial)-1;
+                end
                 leftAction = 'reward'; rightAction = 'Timeout';
                 ValveCode = 1; ValveTime = LeftValveTime; % reward, valve1 = left spout
                 centralvalvetime = valvetimes((valveID+1)/2);
-                
-          case 2 % right trials; delivery of tastant from line 2
-                 if ismember(ValveSeq(currentTrial),[5:8])
-                     valveID = 2*ValveSeq(currentTrial)-1;
-                 end
+
+            case 2 % right trials; delivery of tastant from line 2
+                %if ismember(ValveSeq(currentTrial),[1:4])
+                                      if ismember(ValveSeq(currentTrial),[5:8])
+                    valveID = 2*ValveSeq(currentTrial)-1;
+                end
                 leftAction = 'Timeout'; rightAction = 'reward';
                 ValveCode = 2; ValveTime = RightValveTime; % reward, valve2 = right spout
                 centralvalvetime = valvetimes((valveID+1)/2);
-                
+
         end
     else
         % add context
-        
-        
+
+
     end
 
 %     fprintf('Trial type: %d ::: Valve ID: %d\n',[TrialTypes(currentTrial) valveID]); 
@@ -198,26 +211,76 @@ for currentTrial = 1:MaxTrials
 %     sma = SetGlobalCounter(sma, 1, 'Port1In', 1); % Arguments: (sma, CounterNumber, TargetEvent, Threshold)
 %     sma = SetGlobalCounter(sma, 1, 'Port2In', 1); % Arguments: (sma, CounterNumber, TargetEvent, Threshold)
     
-    sma = AddState(sma, 'Name', 'TasteValveOn', ... %Open specific taste valve
+%     sma = AddState(sma, 'Name', 'TasteValveOn', ... %Open specific taste valve
+%         'Timer', centralvalvetime,...
+%         'StateChangeConditions ', {'Tup', 'TasteValveOff'},...
+%         'OutputActions', {'ValveModule1', valveID,'BNCState',1}); 
+%     
+%      sma = AddState(sma, 'Name', 'TasteValveOff', ... % This example state does nothing, and ends after 0 seconds
+%         'Timer', 0.01,...
+%         'StateChangeConditions', {'Tup', 'CentralForward'},...
+%         'OutputActions', {'ValveModule1', valveID+1,'BNCState',0});
+%     
+%     sma = AddState(sma, 'Name', 'CentralForward', ... %Central spout moves forward
+%         'Timer', S.GUI.MotorTime,...
+%         'StateChangeConditions', {'Tup', 'WaitForLicks'},...
+%         'OutputActions', {'SoftCode', 1});
+% 
+%     sma = AddState(sma, 'Name', 'WaitForLicks', ... % 'Timer' duration does not do anything here..
+%         'Timer', S.GUI.SamplingDuration,...
+%         'StateChangeConditions', {'Tup','TimeoutCentral', 'AnalogIn1_3', 'MyDelay',},...
+%         'OutputActions', {});
+%     
+%     sma = AddState(sma, 'Name', 'TimeoutCentral', ... % 'Timer' duration does not do anything here..
+%         'Timer', S.GUI.PunishTimeoutDuration,...
+%         'StateChangeConditions', {'Tup', 'AspirationUp'},...
+%         'OutputActions', {'SoftCode', 2});
+% 
+%     sma = AddState(sma, 'Name', 'MyDelay', ... % This example state does nothing, and ends after 0 seconds
+%         'Timer', S.GUI.DelayDuration,...
+%         'StateChangeConditions', {'Tup', 'LateralSpoutsUp'},...
+%         'OutputActions', {'SoftCode', 2});
+%     
+%     sma = AddState(sma, 'Name', 'LateralSpoutsUp', ... % This example state does nothing, and ends after 0 seconds
+%         'Timer', S.GUI.MotorTime,...
+%         'StateChangeConditions', {'Tup', 'WaitForLateralLicks'},...
+%         'OutputActions', {'SoftCode', 3});
+%     
+      sma = AddState(sma, 'Name', 'TasteValveOn', ... %Open specific taste valve
         'Timer', centralvalvetime,...
         'StateChangeConditions ', {'Tup', 'TasteValveOff'},...
-        'OutputActions', {'ValveModule1', valveID,'BNCState',1}); 
-    
-     sma = AddState(sma, 'Name', 'TasteValveOff', ... % This example state does nothing, and ends after 0 seconds
+        'OutputActions', {'ValveModule1', valveID,'BNC1',1});
+
+    sma = AddState(sma, 'Name', 'TasteValveOff', ... % This example state does nothing, and ends after 0 seconds
         'Timer', 0.01,...
+        'StateChangeConditions', {'Tup', 'CentralSpoutDelay'},...
+        'OutputActions', {'ValveModule1', valveID+1,'BNC1',0});
+
+    sma = AddState(sma, 'Name', 'CentralSpoutDelay', ... % This example state does nothing, and ends after 0 seconds
+        'Timer', 0.2,...
         'StateChangeConditions', {'Tup', 'CentralForward'},...
-        'OutputActions', {'ValveModule1', valveID+1,'BNCState',0});
-    
+        'OutputActions', {});
+
     sma = AddState(sma, 'Name', 'CentralForward', ... %Central spout moves forward
-        'Timer', S.GUI.MotorTime,...
+        'Timer', S.GUI.MotorTime ,...
         'StateChangeConditions', {'Tup', 'WaitForLicks'},...
         'OutputActions', {'SoftCode', 1});
 
-    sma = AddState(sma, 'Name', 'WaitForLicks', ... % 'Timer' duration does not do anything here..
+  sma = AddState(sma, 'Name', 'WaitForLicks', ... % 'Timer' duration does not do anything here..
         'Timer', S.GUI.SamplingDuration,...
-        'StateChangeConditions', {'Tup','TimeoutCentral', 'AnalogIn1_3', 'MyDelay',},...
+        'StateChangeConditions', {'Tup','TimeoutCentral', 'AnalogIn1_3', 'CentralDrink',},...
         'OutputActions', {});
-    
+
+    sma = AddState(sma, 'Name', 'CentralDrink', ... % 'Timer' duration does not do anything here..
+        'Timer', S.GUI.CentralDrinkTime,...
+        'StateChangeConditions', {'Tup','CentralSpoutBack'},...
+        'OutputActions', {});
+
+    sma = AddState(sma, 'Name', 'CentralSpoutBack', ... % This example state does nothing, and ends after 0 seconds
+        'Timer', S.GUI.MotorTime ,...
+        'StateChangeConditions', {'Tup', 'MyDelay'},...
+        'OutputActions', {'SoftCode', 2});
+
     sma = AddState(sma, 'Name', 'TimeoutCentral', ... % 'Timer' duration does not do anything here..
         'Timer', S.GUI.PunishTimeoutDuration,...
         'StateChangeConditions', {'Tup', 'AspirationUp'},...
@@ -226,14 +289,14 @@ for currentTrial = 1:MaxTrials
     sma = AddState(sma, 'Name', 'MyDelay', ... % This example state does nothing, and ends after 0 seconds
         'Timer', S.GUI.DelayDuration,...
         'StateChangeConditions', {'Tup', 'LateralSpoutsUp'},...
-        'OutputActions', {'SoftCode', 2});
-    
+        'OutputActions', {});
+
     sma = AddState(sma, 'Name', 'LateralSpoutsUp', ... % This example state does nothing, and ends after 0 seconds
         'Timer', S.GUI.MotorTime,...
         'StateChangeConditions', {'Tup', 'WaitForLateralLicks'},...
         'OutputActions', {'SoftCode', 3});
-    
-    
+
+  
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   if S.GUI.TrainingLevel ~=2  % all other case, meaning not correction trials; (include the habituation + no_correction)
     sma = AddState(sma, 'Name', 'WaitForLateralLicks', ... % This example state does nothing, and ends after 0 seconds
@@ -316,6 +379,9 @@ for currentTrial = 1:MaxTrials
     %--- This final block of code is necessary for the Bpod console's pause and stop buttons to work
     HandlePauseCondition; % Checks to see if the protocol is paused. If so, waits until user resumes.
     if BpodSystem.Status.BeingUsed == 0
+        %fclose(port); %added 6/6 to control motor
+        delete(port);
+        clear global port;
         return
     end
     

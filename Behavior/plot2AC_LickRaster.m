@@ -3,7 +3,8 @@ function plot2AC_LickRaster
 % Running this code will open file dialog box to select data file.
 % Function will save figure and summary stats (lick bias, # trials removed)
 
-rootdir = 'D:\MATLAB\Bpod Local\Data';
+ rootdir = 'D:\MATLAB\Bpod Local\Data';
+% rootdir='F:\';
 sep = '\';
 biasthreshold = 0.05;
 

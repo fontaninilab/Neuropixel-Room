@@ -1,4 +1,5 @@
 function t_ZaberMotor_test (motor_num,distance)
+%  warning('off','instrument:serial:ClassToBeRemoved');
 port = serial('COM8'); % set the port
 tic
 set(port, ...
@@ -8,9 +9,8 @@ set(port, ...
     'Parity', 'none', ...
     'StopBits', 1, ...
     'Terminator','CR/LF');
-
-
-set(port, 'Timeout', 0.5)
+% port=serialport("COM8",115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
+% configureTerminator(port,"CR");
 % warning off MATLAB:serial:fgetl:unsuccessfulRead %To suppress warning
 % message
 fopen(port);
@@ -37,4 +37,3 @@ toc
 % device.moveabsolute(position); % Tell the device to move.
 
 fclose(port);
-
