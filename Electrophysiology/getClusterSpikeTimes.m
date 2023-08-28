@@ -19,7 +19,6 @@ function [spikeMat,spikeMatLabels] = getClusterSpikeTimes(spikeTimes,events,Lick
 %                   string labels for each row in spikeMat.
 
 trialStartTimes = events.trialStartEv./events.fsEv; %Convert timestamps to time (s)
-trialStartTimes = trialStartTimes-1.5;
 if nargin > 2
     trialStartTimes = [LickData.TrialStartNP];
 
