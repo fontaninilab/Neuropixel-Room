@@ -49,7 +49,7 @@ load([behaviorpath sep behaviorfile]);
 behaviorEvents = extractTrialData2AFC(SessionData,SessionID); %Extract trial data from behavior computer data
 
 load([MouseID '-' SessionID '-EventData']);
-LickData = getLickTimes(events,behaviorEvents,0); %Add to this code input from behavior computer to delete error licks
+LickData = getLickTimes_cz(events,behaviorEvents,0); %Add to this code input from behavior computer to delete error licks
 
 
 fprintf('Saving LickData...\n'); save([MouseID '-' SessionID '-LickData'],'LickData'); %save([MouseID '-' SessionID '-BehaviorData'],'behaviorEvents');
@@ -66,7 +66,10 @@ cd([outputdir MouseID]);
 load([MouseID '-' SessionID '-ClusterData']);
 load([MouseID '-' SessionID '-EventData']);
 load([MouseID '-' SessionID '-LickData']);
-
+%remove trials with no lateral licks
+LickTable=struct2table(LickData);
+cutLickData=table2struct(LickTable(~cellfun(@isempty,LickTable.FirstLatNP),:))';
+ 
 mkdir('Clusters');
 cd('Clusters');
 
@@ -87,7 +90,7 @@ xLimT = 15; %Time limit for x-axis on figures;
 
 
 for i = 1:nClust
-    spikeMat = getClusterSpikeTimes(spikeTimes{i},events,LickData); %CORRECT FOR NEW LICKDATA STRUCTURE!!!!
+    spikeMat = getClusterSpikeTimes_cz(spikeTimes{i},events,cutLickData); %CORRECT FOR NEW LICKDATA STRUCTURE!!!!
     cellInfo{i,10} = spikeMat; %Add spike mat to master table of all clusters
 
     CI = cellInfo(i,1:9);
@@ -100,32 +103,33 @@ for i = 1:nClust
     if cell2mat(CI(1,6)) == 1 
         %%% Plot spike rasters %%%
         subplot(3,2,1); % Trial-aligned spike times
-        scatter(tempspike(3,:),tempspike(1,:),10,'filled','k');
-        ylabel('Trial #','Fontsize',18); title('Trial start aligned','Fontsize',18)
+        scatter(tempspike(4,:),tempspike(1,:),10,'filled','k');
+        ylabel('Trial #','Fontsize',18); title('Central lick aligned','Fontsize',18)
         set(gca,'XLim',[0 xLimT],'TickDir','out','Fontsize',16)
         
         subplot(3,2,2); % Central lick-aligned spike times
-        scatter(tempspike(4,:),tempspike(1,:),10,'filled','k');
-        ylabel('Trial #','Fontsize',18); xlabel('Time (s)','Fontsize',18); title('Central lick aligned','Fontsize',18)
+        scatter(tempspike(5,:),tempspike(1,:),10,'filled','k');
+        ylabel('Trial #','Fontsize',18); xlabel('Time (s)','Fontsize',18); title('Lateral lick aligned','Fontsize',18)
         set(gca,'XLim',[0 xLimT],'TickDir','out','Fontsize',16)
 
         %%% Plot spike PSTH + smoothed FR %%%
         binsize = 0.1; timeWin = [0 max(spikeMat(3,:))];
         [smoothFR1, spikePSTH1] = smoothFR(spikeMat(3,:),max(spikeMat(1,:)),binsize,timeWin,3);
         [smoothFR2, spikePSTH2] = smoothFR(spikeMat(4,:),max(spikeMat(1,:)),binsize,timeWin,3);
+        [smoothFR3, spikePSTH3] = smoothFR(spikeMat(5,:),max(spikeMat(1,:)),binsize,timeWin,3);
         t = [0:binsize:max(spikeMat(3,:))]; t = t(1:end-1);
         
-        subplot(3,2,3); bar(t,spikePSTH1); box off;
+        subplot(3,2,3); bar(t,spikePSTH2); box off;
         set(gca,'XLim',[0 xLimT],'TickDir','out','Fontsize',16)
         
-        subplot(3,2,5); plot(t,smoothFR1); box off;
+        subplot(3,2,5); plot(t,smoothFR2); box off;
         ylabel('Firing Rate (Hz)','Fontsize',18); xlabel('Time (s)','Fontsize',18); 
         set(gca,'XLim',[0 xLimT],'TickDir','out','Fontsize',16)
         
-        subplot(3,2,4); bar(t,spikePSTH2); box off;
+        subplot(3,2,4); bar(t,spikePSTH3); box off;
         set(gca,'XLim',[0 xLimT],'TickDir','out','Fontsize',16)
         
-        subplot(3,2,6); plot(t,smoothFR2); box off;
+        subplot(3,2,6); plot(t,smoothFR3); box off;
         ylabel('Firing Rate (Hz)','Fontsize',18); xlabel('Time (s)','Fontsize',18); 
         set(gca,'XLim',[0 xLimT],'TickDir','out','Fontsize',16)
         

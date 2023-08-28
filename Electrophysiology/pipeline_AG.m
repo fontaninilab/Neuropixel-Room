@@ -5,7 +5,7 @@ outputdir = 'C:\Users\admin\Documents\DATA\AG\Spikes\';
 MouseID = 'AG10';
 SessionID = 'session1';
 
-NI_path = 'Z:\Fontanini\Allison\Animal data\AG10\Odor2AC_testing\session1';
+NI_path = 'C:\Users\admin\Documents\DATA\AG\AG10_maxz_catgfixonly\catgt_AG10_session1_g0\AG10_session1_g0_imec0';
 
 
 %% getSpikeEvents

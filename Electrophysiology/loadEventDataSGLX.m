@@ -50,7 +50,7 @@ if strcmp(dataType,'A')
 
     %Extract lick indices from data array
     for i = 1:length(lickChanID)
-        lickIDX = find(dataArrayA(i,:)>0.02);
+        lickIDX = find(dataArrayA(i,:)>0.5);
         lickIDXdiff = diff(lickIDX);
         lickstart = find(lickIDXdiff > 1) + 1;
         firsttrial = 1;
