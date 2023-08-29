@@ -69,7 +69,7 @@ load([MouseID '-' SessionID '-LickData']);
 %remove trials with no lateral licks
 LickTable=struct2table(LickData);
 cutLickData=table2struct(LickTable(~cellfun(@isempty,LickTable.FirstLatNP),:))';
- 
+
 mkdir('Clusters');
 cd('Clusters');
 
@@ -89,6 +89,16 @@ nClust = length(spikeTimes);
 xLimT = 15; %Time limit for x-axis on figures;
 
 
+
+sum_Lick_PSTH_table=[];
+for i = 1:nClust
+    [spikeMat,~,PSTH_table] = getClusterSpikeTimes_cz(spikeTimes{i},events,cutLickData); %CORRECT FOR NEW LICKDATA STRUCTURE!!!!
+PSTH_table.clustID=repmat(ClusterData.clustID(i,:),size(PSTH_table,1),1);
+PSTH_table.cellNum=repmat(ClusterData.cellNum(i,:),size(PSTH_table,1),1);
+Lick_PSTH_table=[struct2table(cutLickData),PSTH_table];
+sum_Lick_PSTH_table=[sum_Lick_PSTH_table;Lick_PSTH_table];
+end
+save([MouseID '-' SessionID '-sum_PSTH_Table'],'sum_Lick_PSTH_table');
 for i = 1:nClust
     spikeMat = getClusterSpikeTimes_cz(spikeTimes{i},events,cutLickData); %CORRECT FOR NEW LICKDATA STRUCTURE!!!!
     cellInfo{i,10} = spikeMat; %Add spike mat to master table of all clusters
@@ -98,7 +108,6 @@ for i = 1:nClust
     
     tempspike = spikeMat;
     tempspike(:,tempspike(1,:)==0) = []; %Cut all pre-behavior spikes
-
     % Only create plots for single units
     if cell2mat(CI(1,6)) == 1 
         %%% Plot spike rasters %%%
@@ -160,3 +169,7 @@ ClusterData = cell2table(cellInfo,'VariableNames',labels);
 cd([outputdir sep MouseID]);
 save([MouseID '-' SessionID '-ClusterData'],'ClusterData','-append');
 
+
+%% Some ClusterData metrics for summary table
+%number of single units; depth range
+fprintf('%d single units; depth %d to %d',sum(ClusterData.unitTypeNum==1),min(ClusterData.depth(ClusterData.unitTypeNum==1,:)),max(ClusterData.depth(ClusterData.unitTypeNum==1,:)))

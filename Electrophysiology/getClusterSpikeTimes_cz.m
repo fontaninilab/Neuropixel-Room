@@ -1,4 +1,4 @@
-function [spikeMat,spikeMatLabels] = getClusterSpikeTimes_cz(spikeTimes,events,LickData)
+function [spikeMat,spikeMatLabels,PSTH_table] = getClusterSpikeTimes_cz(spikeTimes,events,LickData)
 % Aligns spike times to trial start
 %
 % INPUTS
@@ -17,7 +17,7 @@ function [spikeMat,spikeMatLabels] = getClusterSpikeTimes_cz(spikeTimes,events,L
 %             (raw, trial aligned, central lick aligned) and trial # for each spike.
 %   spikeMatLabels: (cell) 4x1 (or 3x1 with no lickData input) cell containing
 %                   string labels for each row in spikeMat.
-
+%   PSTH_table: nTrials x 4 table, containing PSTH aligned three ways, one row for each trial. 
 trialStartTimes = events.trialStartEv./events.fsEv; %Convert timestamps to time (s)
 if nargin > 2
     trialStartTimes = [LickData.TrialStartNP];
@@ -29,6 +29,7 @@ spikeTimesTrial = spikeTimes;
 
 if nargin > 2
     centralAligned = spikeTimes;
+    firstLatAligned=spikeTimes;
 end
 
 prestartspikes = find(spikeTimes < trialStartTimes(1));
@@ -36,32 +37,33 @@ trialN(prestartspikes) = 0;
 
 if nargin > 2
     centralAligned(prestartspikes) = NaN;
+    firstLatAligned(prestartspikes) = NaN;
 end
-
-for i = 1:length(trialStartTimes)
-
+PSTH_table={};
+for i = 1:length(LickData)
+    PSTH_table_trial={};
     if i < length(trialStartTimes)
         trialIDX = find(spikeTimes >= trialStartTimes(i) & spikeTimes < trialStartTimes(i+1));
     elseif i == length(trialStartTimes) %last trial
         trialIDX = find(spikeTimes >= trialStartTimes(i));
     end
-
     trialN(trialIDX) = i;
-    spikeTimesTrial(trialIDX) = spikeTimesTrial(trialIDX) - trialStartTimes(i);
-
-    if nargin > 2
-
-        centralAligned(trialIDX) = spikeTimesTrial(trialIDX) - LickData(i).CentralLicksNP(1);
-        if ~isempty(LickData(i).FirstLatNP)
-            firstLatAligned(trialIDX) = spikeTimesTrial(trialIDX) - LickData(i).FirstLatNP;
-        else
-            firstLatAligned(trialIDX) = 0;
-        end
-
+    spikeTimes_trial= spikeTimesTrial(trialIDX) - trialStartTimes(i);
+    spikeTimesTrial(trialIDX)=spikeTimes_trial;
+    spikeTimes_centralAligned = spikeTimesTrial(trialIDX) - LickData(i).CentralLicksNP(1);
+    centralAligned(trialIDX)=spikeTimes_centralAligned;
+    if ~isempty(LickData(i).FirstLatNP)
+        spikeTimes_firstLatAligned= spikeTimesTrial(trialIDX) - LickData(i).FirstLatNP;
+    else
+        spikeTimes_firstLatAligned= 0;
     end
-
+    firstLatAligned(trialIDX)=spikeTimes_firstLatAligned;
+    trial_number=i;
+    varNames = ["trial_number","spikeTimes_trial","spikeTimes_centralAligned","spikeTimes_firstLatAligned"];
+    PSTH_table_trial=table(trial_number, {spikeTimes_trial'},{spikeTimes_centralAligned'},{spikeTimes_firstLatAligned'},'VariableNames',varNames);
+    PSTH_table=[PSTH_table;PSTH_table_trial];
 end
-
+%TODO: make a table that collects spikes for each trial here
 spikeMat(1,:) = trialN; spikeMatLabels{1,1} = 'Trial #';
 spikeMat(2,:) = spikeTimes; spikeMatLabels{1,2} = 'spike times, recording start';
 spikeMat(3,:) = spikeTimesTrial; spikeMatLabels{1,3} = 'spike times, trial start';
@@ -70,6 +72,5 @@ if nargin > 2
     spikeMat(4,:) = centralAligned; spikeMatLabels{1,3} = 'spike times, first central';
     spikeMat(5,:) = firstLatAligned; spikeMatLabels{1,5} = 'spike times, first lateral';
 end
-
 
 
