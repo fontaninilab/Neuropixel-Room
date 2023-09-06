@@ -1,11 +1,11 @@
-function [meta] = ReadMeta(binName, path)
+function [meta] = ReadMeta(binName, myPath)
 
     % Create the matching metafile name
     [dumPath,name,dumExt] = fileparts(binName);
-    metaName = strcat(name, '.meta');
+    metaName = strcat(name, '.meta')
 
     % Parse ini file into cell entries C{1}{i} = C{2}{i}
-    fid = fopen(fullfile(path, metaName), 'r');
+    fid = fopen(fullfile(myPath,metaName), 'r');
 % -------------------------------------------------------------
 %    Need 'BufSize' adjustment for MATLAB earlier than 2014
 %    C = textscan(fid, '%[^=] = %[^\r\n]', 'BufSize', 32768);
