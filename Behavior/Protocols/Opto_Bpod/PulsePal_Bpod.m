@@ -1,7 +1,11 @@
-function Laser_Stim_Only 
+function PulsePal_Bpod
 global BpodSystem
+global port;
+port=serialport('COM9', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
+setDTR(port,true);
+configureTerminator(port,"CR/LF");
+fopen(port);
 
-%% Setup (runs once before the first trial)
 MaxTrials = 500; % Set to some sane value, for preallocation
 
 %--- Define parameters and trial structure
@@ -10,43 +14,45 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     % Define default settings here as fields of S (i.e S.InitialDelay = 3.2)
     % Note: Any parameters in S.GUI will be shown in UI edit boxes. 
     % See ParameterGUI plugin documentation to show parameters as other UI types (listboxes, checkboxes, buttons, text)
-    S.GUI.Stim_Voltage = 0;
-    S.GUI.ITI = 6;
-    S.GUI.Stim_Time = 2; 
+    %S.GUI.Stim_Voltage = 0;
+    %S.GUI.ITI = 6;
+    %S.GUI.Stim_Time = 2; 
 end
+
 
 W = BpodWavePlayer('COM10');
+
+samples = W.SamplingRate;
+
+pulse_duration =  0.0008;
+interpulse_interval = 0.0002;
+total_duration = 2;
+
+numreps = total_duration/(pulse_duration + interpulse_interval);
+pulse_duration_samples = pulse_duration * samples;
+interpulse_interval_samples = interpulse_interval * samples;
+
+pulse_volts = 4;
+pulse_volts_samples = pulse_volts*ones(1,pulse_duration_samples)
+interpulse_volts_samples = zeros(1,interpulse_interval_samples);
+
+pulse_train = repmat([pulse_volts_samples,interpulse_volts_samples],1,numreps);
+%pulse_train = repmat([pulse_volts_samples],1,2*numreps);
+
+W.loadWaveform(1, pulse_train);
+LoadSerialMessages('WavePlayer1', {['P' 3 0], ['P' 3 1]});
+
+
 W.OutputRange = '0V:5V';
-W.TriggerMode = 'Master'; %trigger mode allows for pulses to interrupt eachother, pulses must be longer than states
-% W.BpodEvents{1} = 'On'; W.BpodEvents{2} = 'On'; W.BpodEvents{3} = 'On'; W.BpodEvents{4} = 'On';
-voltages2use=[];
-voltages2use = .5:.5:2; %input the range of voltages to use for opto stim (check these on oscope for accuracy)
-waveNumber={};
-for i=1:length(voltages2use)
-%    waveNumber{i} =  repmat(voltages2use(i),1,(3*10000)); %constant outpu
-     waveNumber{i} =  repmat([repmat(voltages2use(i),1,1000) repmat(0,1,500)],1,5); %example of pulsed output
+W.TriggerMode = 'Master';
 
-  % W.loadWaveform(i,waveNumber{i})
-end
-% waveNumber{length(voltages2use)+1} =  repmat(2.5,1,(6*10000)); %ITI, voltage is set to high (2.5V) so that shutter is off
-% W.loadWaveform(length(voltages2use)+1,waveNumber{length(voltages2use)+1});
-% generate pseudorandom order to present different voltage sequences
-trial_sequences = repmat(1:length(voltages2use),1,3);
-num_rand_sequences = round(MaxTrials/length(trial_sequences))+1; %generate enough sequences for all the trials
-random_order=[]; %this will be the full sequence of wave numbers to use for each trial
-for i=1:num_rand_sequences %loop through so that sequences are pseudorandom across the session
-    random_order = [random_order trial_sequences(randperm(length(trial_sequences)))];
-end
-%--- Initialize plots and start USB connections to any modules
-BpodParameterGUI('init', S); % Initialize parameter GUI plugin
-
-%% Main loop (runs once per trial)
 for currentTrial = 1:MaxTrials
-    S.GUI.Stim_Voltage = voltages2use(random_order(currentTrial));
-    S = BpodParameterGUI('sync', S); % Sync parameters with BpodParameterGUI plugin
-    LoadSerialMessages('WavePlayer1', {['P' 11 random_order(currentTrial)-1],...
-        ['P' 11 4]});  % Set serial message 1 %output on channels 1 and 2
-    sprintf('Trial %i Running, Stim Voltage %g',currentTrial, S.GUI.Stim_Voltage )
+    %S.GUI.Stim_Voltage = voltages2use(random_order(currentTrial));
+    %S = BpodParameterGUI('sync', S); % Sync parameters with BpodParameterGUI plugin
+    %LoadSerialMessages('WavePlayer1', {['P' 11 1]}, 1)
+    %LoadSerialMessages('WavePlayer1', {['P' 11 random_order(currentTrial)-1],...
+   %     ['P' 11 4]});  % Set serial message 1 %output on channels 1 and 2
+   % sprintf('Trial %i Running, Stim Voltage %g',currentTrial, S.GUI.Stim_Voltage )
 
     %--- Typically, a block of code here will compute variables for assembling this trial's state machine
     
@@ -64,7 +70,7 @@ for currentTrial = 1:MaxTrials
     sma = AddState(sma, 'Name', 'ITI', ... % ITI
         'Timer', 5,...
         'StateChangeConditions', {'Tup', 'exit'},...
-        'OutputActions', {'WavePlayer1',2,'BNCState',0}); 
+        'OutputActions', {'BNCState',0}); 
 %     sma = AddState(sma, 'Name', 'Trial_done', ... % ITI
 %         'Timer', 0,...
 %         'StateChangeConditions', {'Tup', 'exit'},...

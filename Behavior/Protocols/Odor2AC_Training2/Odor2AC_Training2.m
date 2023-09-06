@@ -34,12 +34,12 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     S.GUI.MotorTime = 0.5;
     S.GUI.Up        = 14;
     S.GUI.Down      =   5;
-    S.GUI.ResponseTime =5; %10;
+    S.GUI.ResponseTime =8; %10;
     S.GUI.DrinkTime = 3;
     S.GUI.RewardAmount = 5; % in ul
-    S.GUI.PunishTimeoutDuration =5; %10;
+    S.GUI.PunishTimeoutDuration =6; %10;
     S.GUI.AspirationTime = 1; 
-    S.GUI.ITI = 12; %10;
+    S.GUI.ITI = 14; %10;
     
 end
 % set the threshold for the analog input signal to detect events
@@ -55,30 +55,17 @@ A.ResetVoltages = [0.4 0.4 0.1 1.5 1.5 1.5 1.5 1.5]; %Should be at or slightly a
 
 A.SMeventsEnabled = [1 1 1 0 0 0 0 0];
 A.startReportingEvents();
+A.scope;
+A.scope_StartStop;
 
 % Setting the seriers messages for opening the odor valve
 % valve 8 is the vacumm; valve 1 is odor 1; valve 2 is odor 2
 LoadSerialMessages('ValveModule2', {['O' 1], ['C' 1],['O' 2], ['C' 2],['O' 8], ['C' 8]});
 
 % include the block sequence
-if S.GUI.TrainingLevel ~=4
-    trialseq = [1,1,1,2,2,2];
-    TrialTypes = repmat(trialseq,1,500);
-else
-    %break the random sequence into pseudo random (no more than 3 smae trial type in a row)
-    for i= 1:length(TrialTypes)
-        if i>3
-            if TrialTypes(i-1) == TrialTypes(i-2) && TrialTypes(i-2) == TrialTypes(i-3)
-                if TrialTypes(i-1) ==1
-                   TrialTypes(i) =2;
-                else
-                   TrialTypes(i) =1; 
-                end
-            end
-        end
-    end
-    
-end
+trialseq = [2,2,2,2,2,1,1];
+TrialTypes = repmat(trialseq,1,500);
+
 
 %  Initialize plots
 BpodSystem.ProtocolFigures.OutcomePlotFig = figure('Position', [200 200 1000 200],'name','Trial type outcome plot', 'numbertitle','off', 'MenuBar', 'none', 'Resize', 'off'); % Create a figure for the outcome plot
@@ -136,23 +123,28 @@ for currentTrial = 1:MaxTrials
 
     % ---- TRIAL START -----
 
+    sma = AddState(sma,'Name','Initiation',... % Initiation of a new trial with 2 s baseline
+        'Timer',2,...
+        'StateChangeConditions', {'Tup', 'OdorValveOn'},...
+        'OutputActions',{'BNCState',1});
+
     % open nitogen valve
     sma = AddState(sma, 'Name', 'OdorValveOn', ... %Open specific odor valve
         'Timer', odorvalvetime,...
         'StateChangeConditions ', {'Tup', 'VaccuumOff'},...
-        'OutputActions', {'ValveModule2', odoropen}); 
+        'OutputActions', {'ValveModule2', odoropen,'BNCState',0}); 
 
     % vaccuum off - ODOR DELIVERED
     sma = AddState(sma, 'Name', 'VaccuumOff', ... 
         'Timer', S.GUI.SamplingDuration,...
         'StateChangeConditions', {'Tup', 'VaccuumOn'},...
-        'OutputActions', {'ValveModule2', vaccuumoff, 'BNC1', 1});
+        'OutputActions', {'ValveModule2', vaccuumoff});
 
     % vaccuum on - ODOR REMOVED
     sma = AddState(sma, 'Name', 'VaccuumOn', ... 
     'Timer', 0.01,...
     'StateChangeConditions', {'Tup', 'OdorValveOff'},...
-    'OutputActions', {'ValveModule2', vaccuumon, 'BNC1', 0});
+    'OutputActions', {'ValveModule2', vaccuumon});
 
     % close nitrogen valve
     sma = AddState(sma, 'Name', 'OdorValveOff', ...
@@ -259,7 +251,7 @@ for currentTrial = 1:MaxTrials
     TrialTypeOutcomePlotModified(BpodSystem.GUIHandles.OutcomePlot,'update',BpodSystem.Data.nTrials+1,TrialTypes,Outcomes)
     
     figure(100);
-    plot(cumsum(Outcomes2)./([1:length(Outcomes2)]),'-o','Color','#ad6bd3','MarkerFaceColor','#ad6bd3')
+    plot(nancumsum(Outcomes2)./([1:length(Outcomes2)]),'-o','Color','#ad6bd3','MarkerFaceColor','#ad6bd3')
     xlabel('Trial #','fontsize',16);ylabel('Performance','fontsize',16); title(['Performance for Training ' num2str(S.GUI.TrainingLevel)],'fontsize',20)
     grid on
 end

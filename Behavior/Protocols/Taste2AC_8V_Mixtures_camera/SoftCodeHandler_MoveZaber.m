@@ -6,7 +6,7 @@ function SoftCodeHandler_MoveZaber(position)
 % toc
 if position == 1 || position == 2
 %     tic
-    port = serial('COM8'); % set the port
+    port = serial('COM9'); % set the port
     set(port, ...
         'BaudRate', 115200, ...
         'DataBits', 8, ...
@@ -22,7 +22,7 @@ if position == 1 || position == 2
     device = Zaber.AsciiDevice.initialize(protocol, 2); % Central Spout
     switch position
         case 1 % going Forward
-            distance = 21;
+            distance = 22;
             position = device.Units.positiontonative(distance/1000); % convert mm to m
             device.moveabsolute(position); % Tell the device to move.
             device.waitforidle(); % Wait for the move to finish.
@@ -37,7 +37,7 @@ if position == 1 || position == 2
     fclose(port);
 elseif position == 3 || position == 4
 %     tic
-    port = serial('COM8'); % set the port
+    port = serial('COM9'); % set the port
     set(port, ...
         'BaudRate', 115200, ...
         'DataBits', 8, ...
@@ -69,7 +69,7 @@ elseif position == 3 || position == 4
 %     
 elseif position == 5 || position == 6
 %     tic
-    port = serial('COM8'); % set the port
+    port = serial('COM9'); % set the port
     set(port, ...
         'BaudRate', 115200, ...
         'DataBits', 8, ...

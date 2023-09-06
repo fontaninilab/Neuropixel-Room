@@ -1,9 +1,10 @@
 clear; clc;
 
-P = PulsePalModule('COM5');
+P = PulsePalModule('COM10');
 % P.isBiphasic(1)= 1;
+%%
 % Pulse Parameters
-P.phase1Voltage(1) = 10;
+P.phase1Voltage(1) = 4;
 % P.phase2Voltage(1) = 1;
 
 % P.phase1Duration(1) = 0.222;
@@ -24,7 +25,7 @@ P.interPulseInterval(1) = 0.01875;
 P.burstDuration(1) = 0;
 % P.interBurstInterval(1) = 0.025;
 
-P.pulseTrainDuration(1) = 1.5;
+P.pulseTrainDuration(1) = 4;
 
 P.trigger(1)
 %%

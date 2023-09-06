@@ -1,7 +1,7 @@
 function Odor2AC_Training4     
 global BpodSystem
 global port;
-port=serialport('COM8', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
+port=serialport('COM9', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
 setDTR(port,true);
 configureTerminator(port,"CR/LF");
 fopen(port); %line 2-5 added 6/6/23 to control motor
@@ -55,8 +55,8 @@ A.ResetVoltages = [0.4 0.4 0.1 1.5 1.5 1.5 1.5 1.5]; %Should be at or slightly a
 
 A.SMeventsEnabled = [1 1 1 0 0 0 0 0];
 A.startReportingEvents();
-%A.scope;
-%A.scope_StartStop;
+A.scope;
+A.scope_StartStop;
 % Setting the seriers messages for opening the odor valve
 % valve 8 is the vacumm; valve 1 is odor 1; valve 2 is odor 2
 LoadSerialMessages('ValveModule2', {['O' 1], ['C' 1],['O' 2], ['C' 2], ['O' 8], ['C' 8]});
@@ -64,7 +64,7 @@ LoadSerialMessages('ValveModule2', {['O' 1], ['C' 1],['O' 2], ['C' 2], ['O' 8], 
 
 % include the block sequence
 if S.GUI.TrainingLevel ~=4
-    trialseq = [2,2,1,1];
+    trialseq = [2,2];
     TrialTypes = repmat(trialseq,1,500);
 else
     %break the random sequence into pseudo random (no more than 3 smae trial type in a row)
@@ -143,23 +143,28 @@ for currentTrial = 1:MaxTrials
 
     % ---- TRIAL START -----
 
+    sma = AddState(sma,'Name','Initiation',... % Initiation of a new trial with 2 s baseline
+        'Timer',2,...
+        'StateChangeConditions', {'Tup', 'OdorValveOn'},...
+        'OutputActions',{'BNCState',1});
+
     % open nitogen valve
     sma = AddState(sma, 'Name', 'OdorValveOn', ... %Open specific odor valve
         'Timer', odorvalvetime,...
         'StateChangeConditions ', {'Tup', 'VaccuumOff'},...
-        'OutputActions', {'ValveModule2', odoropen}); 
+        'OutputActions', {'ValveModule2', odoropen,'BNCState',0}); 
 
     % vaccuum off - ODOR DELIVERED
     sma = AddState(sma, 'Name', 'VaccuumOff', ... 
         'Timer', S.GUI.SamplingDuration,...
         'StateChangeConditions', {'Tup', 'VaccuumOn'},...
-        'OutputActions', {'ValveModule2', vaccuumoff, 'BNC1', 1});
+        'OutputActions', {'ValveModule2', vaccuumoff});
 
     % vaccuum on - ODOR REMOVED
     sma = AddState(sma, 'Name', 'VaccuumOn', ... 
     'Timer', 0.01,...
     'StateChangeConditions', {'Tup', 'OdorValveOff'},...
-    'OutputActions', {'ValveModule2', vaccuumon, 'BNC1', 0});
+    'OutputActions', {'ValveModule2', vaccuumon});
 
     % close nitrogen valve
     sma = AddState(sma, 'Name', 'OdorValveOff', ...
@@ -248,18 +253,46 @@ for currentTrial = 1:MaxTrials
     
     Outcomes = zeros(1,BpodSystem.Data.nTrials); %Use for graph
     Outcomes2 = zeros(1,BpodSystem.Data.nTrials); %Populate for cumsum plot
+    first_lick_L =  zeros(1,BpodSystem.Data.nTrials);
+    first_lick_R =  zeros(1,BpodSystem.Data.nTrials);
+    R_count = zeros(1,BpodSystem.Data.nTrials);
+    L_count = zeros(1,BpodSystem.Data.nTrials);
+    R_correct = zeros(1,BpodSystem.Data.nTrials);
+    L_correct = zeros(1,BpodSystem.Data.nTrials);
+
     for x = 1:BpodSystem.Data.nTrials
         aa = BpodSystem.Data.RawEvents.Trial{x}.Events;
 
+        if BpodSystem.Data.TrialSequence(x) ==1
+            L_count(x)=1;
+        elseif BpodSystem.Data.TrialSequence(x) ==2
+            R_count(x)=1;
+        end
+
+        if isfield(aa, 'AnalogIn1_1')
+            first_lick_L(x) = aa.AnalogIn1_1(1);
+        elseif isfield(aa, 'AnalogIn1_2')
+            first_lick_R(x) = aa.AnalogIn1_2(1);
+        end
+
         if ~isnan(BpodSystem.Data.RawEvents.Trial{x}.States.Reward(1))
+            if BpodSystem.Data.TrialSequence(x) ==1
+                L_correct(x)=1;
+            elseif BpodSystem.Data.TrialSequence(x) ==2
+                R_correct(x)=1;
+            end
+
             if isfield(aa, 'AnalogIn1_1') && isfield(aa, 'AnalogIn1_2')
-                Outcomes(x) = 2; %If correct, mark as green
+                Outcomes(x) = 2; %If correct w both licks, mark as green open
                 Outcomes2(x) = 1;
             else
                 Outcomes(x) = 1; %If correct, mark as green
                 Outcomes2(x) = 1;
             end
-        elseif isfield(aa, 'AnalogIn1_1') || isfield(aa, 'AnalogIn1_2')
+        elseif isfield(aa, 'AnalogIn1_1')
+            Outcomes(x) = 0; %If response, but wrong, mark as red
+            Outcomes2(x) = 0;
+        elseif isfield(aa, 'AnalogIn1_2')
             Outcomes(x) = 0; %If response, but wrong, mark as red
             Outcomes2(x) = 0;
         elseif ~isnan(BpodSystem.Data.RawEvents.Trial{x}.States.Timeout(1))
@@ -271,8 +304,23 @@ for currentTrial = 1:MaxTrials
     
     TrialTypeOutcomePlotModified(BpodSystem.GUIHandles.OutcomePlot,'update',BpodSystem.Data.nTrials+1,TrialTypes,Outcomes)
     
-    figure(100);
-    plot(cumsum(Outcomes2)./([1:length(Outcomes2)]),'-o','Color','#ad6bd3','MarkerFaceColor','#ad6bd3')
+    %figure(100);
+    %plot(nancumsum(Outcomes2)./([1:length(Outcomes2)]),'-o','Color','#ad6bd3','MarkerFaceColor','#ad6bd3')
+    %xlabel('Trial #','fontsize',16);ylabel('Performance','fontsize',16); title(['Performance for Training ' num2str(S.GUI.TrainingLevel)],'fontsize',20)
+    %grid on
+
+figure(101); 
+    plot(cumsum(R_correct)./(cumsum(R_count)),'-o');hold on;
+    plot(nancumsum(Outcomes2)./([1:length(Outcomes2)]),'-o','Color','#ad6bd3','MarkerFaceColor','#ad6bd3');
+    plot(cumsum(L_correct)./(cumsum(L_count)),'-o'); hold off;
+
     xlabel('Trial #','fontsize',16);ylabel('Performance','fontsize',16); title(['Performance for Training ' num2str(S.GUI.TrainingLevel)],'fontsize',20)
+    grid on
+        
+    figure(102);
+    plot(first_lick_R','-o'); hold on;
+    plot(first_lick_L','-o'); hold off;
+    xlabel('Trial #','fontsize',16);ylabel('Time to lick (s)','fontsize',16); title(['Lick time ' num2str(S.GUI.TrainingLevel)],'fontsize',20)
+    legend('right','left');
     grid on
 end

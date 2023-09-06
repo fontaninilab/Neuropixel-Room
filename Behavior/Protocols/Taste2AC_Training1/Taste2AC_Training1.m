@@ -1,7 +1,7 @@
 function Taste2AC_Training1      
 global BpodSystem
 global port;
-port=serialport('COM8', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
+port=serialport('COM9', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
 configureTerminator(port,"CR/LF");
 setDTR(port,true);
 fopen(port); %line 2-5 added 6/6/23 to control motor
@@ -42,7 +42,6 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
 end
 % set the threshold for the analog input signal to detect events
 A = BpodAnalogIn('COM6');
-
 A.nActiveChannels = 8;
 A.InputRange = {'-5V:5V',  '-5V:5V',  '-5V:5V',  '-5V:5V',  '-10V:10V', '-10V:10V',  '-10V:10V',  '-10V:10V'};
 
@@ -56,7 +55,7 @@ A.Thresholds = [1 1 1 1 2 2 2 2];
 A.ResetVoltages = [0.4 0.4 0.4 0.4 1.5 1.5 1.5 1.5]; %Should be at or slightly above baseline (check oscilloscope)
 %--------------------------------------
 
-A.SMeventsEnabled = [1 1 1 1 0 0 0 0];
+A.SMeventsEnabled = [1 1 1 0 0 0 0 0];
 A.startReportingEvents();
 A.scope;
 A.scope_StartStop;
