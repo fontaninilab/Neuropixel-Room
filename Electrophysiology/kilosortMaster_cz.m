@@ -20,9 +20,9 @@
 %%
 % 3. Run common average reference (will save in new folder _CAR)
 
-MouseID = 'CZN06';
+MouseID = 'Mouseketeer5';
 SessionID = '0';
-badchanIDX = [221:385];
+badchanIDX = [1:40 230:385];
 
 CommonAverageReferenceSGLX_cz(MouseID, SessionID, badchanIDX);
 
