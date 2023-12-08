@@ -1,7 +1,7 @@
 function Taste2AC_Training2 
 global BpodSystem
 global port;
-port=serialport('COM8', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
+port=serialport('COM9', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
 configureTerminator(port,"CR/LF");
 setDTR(port,true);
 fopen(port); %line 2-5 added 6/6/23 to control motor
@@ -10,8 +10,8 @@ fopen(port); %line 2-5 added 6/6/23 to control motor
 MaxTrials = 10000; % Set to some sane value, for preallocation
 
 TrialTypes = ceil(rand(1,MaxTrials)*2);
-valve1 = 8; v1 = (2*valve1)-1; %Associated with left correct
-valve2 = 1; v2 = (2*valve2)-1; %Associated with right correct
+valve1 = 1; v1 = (2*valve1)-1; %Associated with left correct
+valve2 = 8; v2 = (2*valve2)-1; %Associated with right correct
 %--- Define parameters and trial structure
 S = BpodSystem.ProtocolSettings; % Loads settings file chosen in launch manager into current workspace as a struct called 'S'
 if isempty(fieldnames(S))  % If chosen settings file was an empty struct, populate struct with default settings
@@ -29,7 +29,7 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     S.GUI.MotorTime = 0.5;
     S.GUI.Up        = 14;
     S.GUI.Down      =   5;
-    S.GUI.ResponseTime = 5;
+    S.GUI.ResponseTime = 7;
     S.GUI.DrinkTime = 2;
     S.GUI.RewardAmount = 3; % in ul
     S.GUI.PunishTimeoutDuration = 10;
@@ -56,16 +56,16 @@ A.ResetVoltages = [0.4 0.4 0.4 0.4 1.5 1.5 1.5 1.5]; %Should be at or slightly a
 
 A.SMeventsEnabled = [1 1 1 0 0 0 0 0];
 A.startReportingEvents();
-% A.scope;
-% A.scope_StartStop;
+A.scope;
+A.scope_StartStop;
 % Setting the seriers messages for opening the odor valve
 % valve 1 is the vacumm; valve 2 is odor 1; valve 3 is odor 2
 LoadSerialMessages('ValveModule1', {['O' 1], ['C' 1],['O' 2], ['C' 2],['O' 3], ['C' 3], ['O' 4], ['C' 4],['O' 5], ['C' 5],['O' 6], ['C' 6], ['O' 7], ['C' 7], ['O' 8], ['C' 8]});
 
 % include the block sequence
 if S.GUI.TrainingLevel ~=4
-     trialseq = [1,1,1,2,2,2];
-%      trialseq = [2,2,2,1,1,1];
+%      trialseq = [1,1,1,2,2,2];
+     trialseq = [2,2,2,1,1,1];
     TrialTypes = repmat(trialseq,1,500);
 else
     %break the random sequence into pseudo random (no more than 3 smae trial type in a row)
@@ -277,6 +277,7 @@ for currentTrial = 1:MaxTrials
     if BpodSystem.Status.BeingUsed == 0
           delete(port);
         clear global port;
+        clear A
         return
     end
     

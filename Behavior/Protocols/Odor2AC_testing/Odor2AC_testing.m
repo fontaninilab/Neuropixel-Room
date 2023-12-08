@@ -1,7 +1,7 @@
-function Odor2AC_Training4     
+function Odor2AC_testing     
 global BpodSystem
 global port;
-port=serialport('COM8', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
+port=serialport('COM9', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
 setDTR(port,true);
 configureTerminator(port,"CR/LF");
 fopen(port); %line 2-5 added 6/6/23 to control motor
@@ -277,7 +277,7 @@ for currentTrial = 1:MaxTrials
     TrialTypeOutcomePlotModified(BpodSystem.GUIHandles.OutcomePlot,'update',BpodSystem.Data.nTrials+1,TrialTypes,Outcomes)
     
     figure(100);
-    plot(cumsum(Outcomes2)./([1:length(Outcomes2)]),'-o','Color','#ad6bd3','MarkerFaceColor','#ad6bd3')
+    plot(nancumsum(Outcomes2)./([1:length(Outcomes2)]),'-o','Color','#ad6bd3','MarkerFaceColor','#ad6bd3')
     xlabel('Trial #','fontsize',16);ylabel('Performance','fontsize',16); title(['Performance for Training ' num2str(S.GUI.TrainingLevel)],'fontsize',20)
     grid on
 end

@@ -1,7 +1,7 @@
 function Taste2AC_Training3 
 global BpodSystem
 global port;
-port=serialport('COM8', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
+port=serialport('COM9', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
 setDTR(port,true);
 configureTerminator(port,"CR/LF");
 fopen(port); %line 2-5 added 6/6/23 to control motor
@@ -53,10 +53,10 @@ A.Thresholds = [0.8 0.8 0.8 1 1 2 2 2];
 A.ResetVoltages = [0.4 0.4 0.4 0.4 1.5 1.5 1.5 1.5]; %Should be at or slightly above baseline (check oscilloscope)
 %--------------------------------------
 
-A.SMeventsEnabled = [1 1 1 1 0 0 0 0];
+A.SMeventsEnabled = [1 1 1 0 0 0 0 0];
 A.startReportingEvents();
-% A.scope;
-% A.scope_StartStop;
+A.scope;
+A.scope_StartStop;
 % Setting the seriers messages for opening the odor valve
 
 LoadSerialMessages('ValveModule1', {['O' 1], ['C' 1],['O' 2], ['C' 2],['O' 3], ['C' 3], ['O' 4], ['C' 4],['O' 5], ['C' 5],['O' 6], ['C' 6], ['O' 7], ['C' 7], ['O' 8], ['C' 8]});

@@ -14,8 +14,8 @@ MaxTrials = 10000; % Set to some sane value, for preallocation
 
 TrialTypes = ceil(rand(1,MaxTrials)*2);
 
-valve1 = 7; v1 = (2*valve1)-1;
-valve2 = 2; v2 = (2*valve2)-1;
+valve1 = 6; v1 = (2*valve1)-1;
+valve2 = 3; v2 = (2*valve2)-1;
 
 %--- Define parameters and trial structure
 S = BpodSystem.ProtocolSettings; % Loads settings file chosen in launch manager into current workspace as a struct called 'S'
@@ -59,10 +59,10 @@ A.Thresholds = [1 1 1 1 2 2 2 2];
 A.ResetVoltages = [0.4 0.4 0.4 0.4 1.5 1.5 1.5 1.5]; %Should be at or slightly above baseline (check oscilloscope)
 %--------------------------------------
 
-A.SMeventsEnabled = [1 1 1 1 0 0 0 0];
+A.SMeventsEnabled = [1 1 1 0 0 0 0 0];
 A.startReportingEvents();
-% A.scope;
-% A.scope_StartStop;
+A.scope;
+A.scope_StartStop;
 % For sound generation
 % SF = 50000;
 % W = BpodWavePlayer('COM4');
@@ -116,7 +116,7 @@ TotalRewardDisplay('init');
 % valvetimes=[0.219132108962338	0.237617872714368	0.188261051628414	0.194688384124161	0.191379735900284	0.191379735900284	0.191379735900284	0.224489528795812]; %4ul 6/23/23 new spout
 % valvetimes=[0.271654559851275	0.168330685774158	0.129059122511895	0.128404332713604	0.135159131734474	0.135159131734474	0.135159131734474	0.249830912304973]; %3ul 6/29/23
 % valvetimes= [0.365754925924651	0.307617872714368	0.308261051628414	0.304688384124161	0.311379735900284	0.301379735900284	0.301379735900284	0.339864620046774]; % 4ul 6/29/23 measured horz
-valvetimes=[0.204013411697693	0.204255608916924	0.209059122511895	0.198404332713604	0.205159131734474	0.205159131734474	0.205159131734474	0.236493422280735]; %3ul new 9v spout, horz
+valvetimes=[0.204013411697693	0.204255608916924	0.209059122511895	0.208404332713604	0.205159131734474	0.205159131734474	0.205159131734474	0.236493422280735]; %3ul new 9v spout, horz
 % valvetimes=[0.254782987684368	0.257727044656297	0.188261051628414	0.194688384124161	0.191379735900284	0.191379735900284	0.191379735900284	0.297056974150890];%4ul new 9v spout, horz
 %% Main loop (runs once per trial)
 for currentTrial = 1:MaxTrials
