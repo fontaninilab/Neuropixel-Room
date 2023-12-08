@@ -5,14 +5,18 @@ outputdir = 'C:\Users\admin\Documents\DATA\AG\Spikes\';
 MouseID = 'AG10';
 SessionID = 'session1';
 
-NI_path = 'C:\Users\admin\Documents\DATA\AG\AG10_maxz_catgfixonly\catgt_AG10_session1_g0\AG10_session1_g0_imec0';
+NI_path = 'F:\AG10\AG10_session3_g0\AG10_session3_g0_imec0';
+NI_binName = 'AG10_session3_g0_t0.nidq.bin';
+NI_metaName = 'AG10_session3_g0_t0.nidq.meta';
 
+AP_path = 'F:\AG10\AG10_session3_g0\AG10_session3_g0_imec0';
+AP_metaName = 'AG10_session3_g0_tcat.imec0.ap.meta';
 
+NPY_path = 'F:\AG10\AG10_session3_g0\AG10_session3_g0_imec0\imec0_ks3';
+save_path = 'Z:\Fontanini\Allison\Animal data\AG10\Odor2AC_testing\session3';
 %% getSpikeEvents
 % loadEventDataSGLX
 
-NI_binName = 'AG10_session1_g0_t0.nidq.bin';
-NI_metaName = 'AG10_session1_g0_t0.nidq.meta';
 
 % SGLXReadMeta
 fid = fopen(fullfile(NI_path,NI_metaName), 'r');
@@ -133,9 +137,6 @@ events.trialStartEv = trialStartEv;
 events.fsEv = fsEv;
 %% Extract spikes
 
-AP_path = 'C:\Users\admin\Documents\DATA\AG\AG10_maxz_catgfixonly\catgt_AG10_session1_g0\AG10_session1_g0_imec0';
-AP_metaName = 'AG10_session1_g0_tcat.imec0.ap.meta';
-
 % SGLXReadMeta
 fid = fopen(fullfile(AP_path,AP_metaName), 'r');
 C = textscan(fid, '%[^=] = %[^\r\n]');
@@ -155,7 +156,6 @@ for i = 1:length(C{1})
 end
 fs = str2double(AP_meta.imSampRate);
 %%
-NPY_path = 'C:\Users\admin\Documents\DATA\AG\AG10_maxz_catgfixonly\catgt_AG10_session1_g0\AG10_session1_g0_imec0\imec0_ks3';
 spks = double(readNPY(fullfile(NPY_path,'spike_times.npy'))) / fs;
 clust  = double(readNPY(fullfile(NPY_path,'spike_clusters.npy')));
 
@@ -449,8 +449,8 @@ set(gcf,'Position',[0 0 ppsize]);
 sgtitle([npEvents.MouseID ' ' npEvents.SessionID ' Lick Times'],'FontSize',20, 'Color', 'red')
 
 %%
-cd('Z:\Fontanini\Allison\Animal data\AG10\Odor2AC_testing\session1');
+cd(save_path);
 fprintf('Saving ClusterData...'); save([MouseID '-' SessionID '-ClusterData'],'spikes','fs','cellInfo','labels');
 fprintf('Saving EventData...\n'); save([MouseID '-' SessionID '-EventData'],'events');
 fprintf('Saving LickData...\n'); save([MouseID '-' SessionID '-LickData'],'LickData');
-
+fprintf('Done saving!')
