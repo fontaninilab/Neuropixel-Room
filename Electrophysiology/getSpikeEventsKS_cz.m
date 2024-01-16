@@ -72,8 +72,8 @@ events.fsEv = fsEv;
 % ap_metaName = [fileChunks{end} '_t0.imec0.ap.meta']; %Name of ap.meta file
 % ap_meta = SGLXReadMeta(ap_metaName, [myPath '\' fileChunks{end} '_imec0']);
 
-ap_metaName = [run_name '_t0.imec0.ap.meta']; %Name of ap.meta file
-% ap_metaName = [run_name '_tcat.imec0.ap.meta']; %Name of ap.meta file
+% ap_metaName = [run_name '_t0.imec0.ap.meta']; %Name of ap.meta file
+ap_metaName = [run_name '_tcat.imec0.ap.meta']; %Name of ap.meta file
 % ap_metaName = [fileChunks{end} '_tcat.imec0.ap.meta']; %Name of ap.meta file
 
 ap_meta = SGLXReadMeta(ap_metaName, [myPath '\' run_name '_imec0']);
@@ -98,10 +98,10 @@ clust  = double(readNPY(fullfile([myPath '\' run_name  '_imec0\imec0_ks3'],'spik
 opts = delimitedTextImportOptions("NumVariables", 38);
 opts.DataLines = [2, Inf];
 opts.Delimiter = "\t";
-opts.VariableNames = ["id", "Amplitude", "ContamPct", "KSLabel", "amp", "ch", "depth", "fr", "group", "n_spikes", "sh"];
-opts.VariableTypes = ["double", "double", "double", "char", "double", "double", "double", "double", "char", "double", "double"];
-% opts.VariableNames = ["id",  "ContamPct", "KSLabel", "PT_ratio", "amp","amplitude","amplitude_cutoff", "ch", "contam_rate","cumulative_drift","d_prime","depth", "duration","epoch_name","epoch_name_quality_metrics","epoch_name_waveform_metrics","firing_rate","fr","group","halfwidth","isi_viol","isolation_distance","l_ratio","max_drift","n_spikes","nn_hit_rate","nn_miss_rate","num_viol","peak_channel","presence_ratio","recovery_slope","repolarization_slope","sh","silhouette_score","snr","spread","velocity_above","velocity_below"];
-% opts.VariableTypes = ["double", "double", "char",    "double",  "double","double",  "double",       "double", "double",   "double",         "double",  "double" ,"double",  "char",   "char", "char",                                                "double", "double", "char",   "double", "double",   "double",  "double", "double",  "double", "double",   "double",          "double",   "double",      "double",      "double",             "double",   "double", "double",        "double", "double","double", "double"];
+% opts.VariableNames = ["id", "Amplitude", "ContamPct", "KSLabel", "amp", "ch", "depth", "fr", "group", "n_spikes", "sh"];
+% opts.VariableTypes = ["double", "double", "double", "char", "double", "double", "double", "double", "char", "double", "double"];
+opts.VariableNames = ["id",  "ContamPct", "KSLabel", "PT_ratio", "amp","amplitude","amplitude_cutoff", "ch", "contam_rate","cumulative_drift","d_prime","depth", "duration","epoch_name","epoch_name_quality_metrics","epoch_name_waveform_metrics","firing_rate","fr","group","halfwidth","isi_viol","isolation_distance","l_ratio","max_drift","n_spikes","nn_hit_rate","nn_miss_rate","num_viol","peak_channel","presence_ratio","recovery_slope","repolarization_slope","sh","silhouette_score","snr","spread","velocity_above","velocity_below"];
+opts.VariableTypes = ["double", "double", "char",    "double",  "double","double",  "double",       "double", "double",   "double",         "double",  "double" ,"double",  "char",   "char", "char",                                                "double", "double", "char",   "double", "double",   "double",  "double", "double",  "double", "double",   "double",          "double",   "double",      "double",      "double",             "double",   "double", "double",        "double", "double","double", "double"];
 % dat = readtable([myPath '\' fileChunks{end} '_imec0\cluster_info.tsv'],opts);
 % dat = readtable([myPath '\' fileChunks{end} '_CAR\cluster_info.tsv'],opts);
 dat = readtable([myPath '\' run_name '_imec0\imec0_ks3\cluster_info.tsv'],opts);

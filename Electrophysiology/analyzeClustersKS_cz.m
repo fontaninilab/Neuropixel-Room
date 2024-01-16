@@ -9,20 +9,20 @@
 % 
 % myPath = [rootdir MouseID sep MouseID '_' SessionID '_g0'] %Folder containing nidaq data (parent folder to imec0 folder)
  
-rootdir = 'C:\Users\admin\Documents\DATA\CZ\';
-% rootdir = 'F:\';
+% rootdir = 'C:\Users\admin\Documents\DATA\CZ\';
+rootdir = 'F:\';
 sep = '\';
 outputdir = 'C:\Users\admin\Documents\DATA\CZ\Spikes\';
 
 MouseID = 'CZN08';
-SessionID = 'p1';
+SessionID = '0';
 SessionGate ='0';
 SessionTime = '0';
 mkdir(outputdir,MouseID);
 
 
-myPath = [rootdir MouseID sep MouseID '_' SessionID '_g0'] %Folder containing nidaq data (parent folder to imec0 folder)
-% myPath = [rootdir MouseID sep 'catgt_' MouseID '_' SessionID '_g0'] %Folder containing nidaq data (parent folder to imec0 folder)
+% myPath = [rootdir MouseID sep MouseID '_' SessionID '_g0'] %Folder containing nidaq data (parent folder to imec0 folder)
+myPath = [rootdir MouseID sep 'catgt_' MouseID '_' SessionID '_g0'] %Folder containing nidaq data (parent folder to imec0 folder)
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  Extract spikes and events for a given session
