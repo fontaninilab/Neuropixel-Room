@@ -10,8 +10,8 @@ fopen(port); %line 2-5 added 6/6/23 to control motor
 MaxTrials = 10000; % Set to some sane value, for preallocation
 
 TrialTypes = ceil(rand(1,MaxTrials)*2);
-valve1 = 1; v1 = (2*valve1)-1; %Associated with left correct
-valve2 = 8; v2 = (2*valve2)-1; %Associated with right correct
+valve1 = 2; v1 = (2*valve1)-1; %Associated with left correct
+valve2 = 7; v2 = (2*valve2)-1; %Associated with right correct
 %--- Define parameters and trial structure
 S = BpodSystem.ProtocolSettings; % Loads settings file chosen in launch manager into current workspace as a struct called 'S'
 if isempty(fieldnames(S))  % If chosen settings file was an empty struct, populate struct with default settings

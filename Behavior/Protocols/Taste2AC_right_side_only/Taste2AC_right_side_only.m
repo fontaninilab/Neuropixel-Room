@@ -3,7 +3,7 @@
 function Taste2AC_right_side_only      
 global BpodSystem
 global port
-port=serialport('COM8', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
+port=serialport('COM9', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
 setDTR(port,true);
 configureTerminator(port,"CR/LF");
 fopen(port); %line 2-5 added 6/6/23 to control motor
@@ -13,7 +13,7 @@ MaxTrials = 10000; % Set to some sane value, for preallocation
 
 TrialTypes = ceil(rand(1,MaxTrials)*2);
 
-valveN = 1; %Valve number
+valveN = 8; %Valve number
 valveID = (2*valveN)-1;
 
 %--- Define parameters and trial structure
@@ -33,7 +33,7 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     S.GUI.MotorTime = 0.5;
     S.GUI.Up        = 14;
     S.GUI.Down      =   5;
-    S.GUI.ResponseTime = 5;
+    S.GUI.ResponseTime = 10;
     S.GUI.DrinkTime = 2;
     S.GUI.RewardAmount = 3; % in ul
     S.GUI.PunishTimeoutDuration = 10;
@@ -59,7 +59,8 @@ A.ResetVoltages = [0.4 0.4 0.4 1.5 1.5 1.5 1.5 1.5]; %Should be at or slightly a
 
 A.SMeventsEnabled = [1 1 1 0 0 0 0 0];
 A.startReportingEvents();
-
+A.scope;
+A.scope_StartStop;
 % Setting the seriers messages for opening the odor valve
 % valve 1 is the vacumm; valve 2 is odor 1; valve 3 is odor 2
 LoadSerialMessages('ValveModule1', {['O' 1], ['C' 1],['O' 2], ['C' 2],['O' 3], ['C' 3], ['O' 4], ['C' 4],['O' 5], ['C' 5],['O' 6], ['C' 6], ['O' 7], ['C' 7], ['O' 8], ['C' 8]});

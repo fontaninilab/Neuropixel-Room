@@ -5,7 +5,7 @@
 % BPOD system (takes 10-15 minutes per valve)
 
 
-rootdir = 'D:\GitHub\Neuropixel-Room\Behavior\Calibration\Central\';
+rootdir = 'C:\Users\Yuejiao Zheng\Documents\Neuropixel-Room\Behavior\Calibration\Central\';
 cd(rootdir);
 mkdir(date);
 cd([rootdir date]);
@@ -20,7 +20,7 @@ fprintf(' Calibration for valve %d complete\n',valveN)
 fprintf('**********************************\n')
 
 %%
- weights = [0.1091 0.1829 0.3368 0.4531 0.5951]; %Enter weights for each valve time by hand
+ weights = [0.1452 0.2211 0.3684 0.5220 0.6573]; %Enter weights for each valve time by hand
 % weights = [0.1002 0.1813 0.3357 0.4819 0.6332];
 % Possible_v3_weights = [0.1402 0.2110 0.3466 0.4754 0.6032];
 data = calcCalibrationData(weights,valveOpenTimes,nTrials);
@@ -32,7 +32,7 @@ fprintf(' Conversion for valve %d complete\n',valveN)
 fprintf('**********************************\n')
 
 %% --- Calculate valve times for desired output volume ---
-rewardamt = 3; % Output volume in uL
+rewardamt = 4; % Output volume in uL
 valveTimes = getValveTimesCentral(rewardamt);
 
 

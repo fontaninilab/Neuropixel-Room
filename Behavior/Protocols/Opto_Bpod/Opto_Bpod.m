@@ -14,8 +14,8 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     % Define default settings here as fields of S (i.e S.InitialDelay = 3.2)
     % Note: Any parameters in S.GUI will be shown in UI edit boxes. 
     % See ParameterGUI plugin documentation to show parameters as other UI types (listboxes, checkboxes, buttons, text)
-    S.ITI = 10;
-    S.Stim_Time = 2; 
+    S.ITI = 6;
+    S.Stim_Time = 1; 
     S.train = 0;
     S.pulse_volts = 0;
     S.pulse_duration = 0; 
@@ -31,8 +31,10 @@ pulse_volts = [5 5 5 5];
 %pulse_duration = [0.00025 0.00035 0.00054 0.00076];
 %interpulse_interval = [0.00075 0.00065 0.00046 0.00024];
 
-pulse_duration = [0.00076 0.0008 0.0009 0.00099];
-interpulse_interval = [0.00024 0.0002 0.0001 0.00001];
+% pulse_duration = [0.00076 0.0008 0.0009 0.00099];
+% interpulse_interval = [0.00024 0.0002 0.0001 0.00001];
+pulse_duration = [0.001 0.003 0.005 0.005];
+interpulse_interval = [0.199 0.197 0.195 0.995];
 
 % TRAIN 1 ideal = 23.6uW = 125uW/mm
 % actual = ~24uW
@@ -61,7 +63,7 @@ W.OutputRange = '0V:5V';
 W.TriggerMode = 'Master';
 
 for currentTrial = 1:MaxTrials
-    r = randi([1 4]);
+    r = randi([1 3]);
 
     S.train = r;
     S.pulse_volts = pulse_volts(r);

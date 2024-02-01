@@ -11,8 +11,8 @@ fopen(port); %line 2-5 added 6/6/23 to control motor
 MaxTrials = 350; % Set to some sane value, for preallocation
 
 TrialTypes = ceil(rand(1,MaxTrials)*2);
-valve1 = 5; v1 = (2*valve1)-1;
-valve2 = 4; v2 = (2*valve2)-1;
+valve1 = 2; v1 = (2*valve1)-1;
+valve2 = 7; v2 = (2*valve2)-1;
 
 %--- Define parameters and trial structure
 S = BpodSystem.ProtocolSettings; % Loads settings file chosen in launch manager into current workspace as a struct called 'S'
@@ -60,6 +60,8 @@ A.ResetVoltages = [0.4 0.4 0.4 0.4 1.5 1.5 1.5 1.5]; %Should be at or slightly a
 
 A.SMeventsEnabled = [1 1 1 0 0 0 0 0];
 A.startReportingEvents();
+A.scope;
+A.scope_StartStop;
 % For sound generation
 % SF = 50000;
 % W = BpodWavePlayer('COM4');
@@ -107,8 +109,8 @@ BpodParameterGUI('init', S); % Initialize parameter GUI plugin
 BpodNotebook('init'); % Bpod Notebook (to record text notes about the session or individual trials)
 BpodSystem.SoftCodeHandlerFunction = 'SoftCodeHandler_MoveZaber2';
 TotalRewardDisplay('init');
-valvetimes=[0.204013411697693	0.204255608916924	0.209059122511895	0.208404332713604	0.205159131734474	0.205159131734474	0.205159131734474	0.236493422280735]; %3ul new 9v spout, horz
-% valvetimes=[0.254782987684368	0.257727044656297	0.188261051628414	0.194688384124161	0.191379735900284	0.191379735900284	0.191379735900284	0.297056974150890];%4ul new 9v spout, horz
+% valvetimes=[0.204013411697693	0.204255608916924	0.209059122511895	0.208404332713604	0.205159131734474	0.205159131734474	0.205159131734474	0.236493422280735]; %3ul new 9v spout, horz
+valvetimes=[0.228353327306018	0.252015183439757	0.275023283423226	0.214166349433253	0.221691950592722	0.219748611779287	0.228973793602024	0.224751165191279];%4ul new 9v spout, 9/30/23
 %% Main loop (runs once per trial)
 for currentTrial = 1:MaxTrials
     bias_corr_start=S.GUI.bias_corr_start;

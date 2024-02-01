@@ -52,7 +52,7 @@ elseif position == 3 || position == 4
     device = Zaber.AsciiDevice.initialize(protocol, 1); % very slow to execute
     switch position
         case 3 % going up
-            distance = 15;
+            distance = 14.7;
             position = device.Units.positiontonative(distance/1000); % convert mm to m
             device.moveabsolute(position); % Tell the device to move.
             device.waitforidle(); % Wait for the move to finish.

@@ -1,4 +1,4 @@
-function odortest   
+function testpid         
 global BpodSystem
 global port;
 port=serialport('COM9', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
@@ -6,9 +6,9 @@ setDTR(port,true);
 configureTerminator(port,"CR/LF");
 fopen(port); %line 2-5 added 6/6/23 to control motor
 %% Setup (runs once before the first trial)
-MaxTrials = 200; % Set to some sane value, for preallocation
+MaxTrials = 1000; % Set to some sane value, for preallocation
 
-%TrialTypes = ceil(rand(1,MaxTrials)*2);
+TrialTypes = ceil(rand(1,MaxTrials)*2);
 
 vaccuumvalveID = 8;
 odor1valveID = 1;
@@ -39,7 +39,7 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     S.GUI.RewardAmount = 5; % in ul
     S.GUI.PunishTimeoutDuration =10; %10;
     S.GUI.AspirationTime = 1; 
-    S.GUI.ITI = 5;
+    S.GUI.ITI = 15;
     
 end
 % set the threshold for the analog input signal to detect events
@@ -55,94 +55,66 @@ A.ResetVoltages = [0.4 0.4 0.1 1.5 1.5 1.5 1.5 1.5]; %Should be at or slightly a
 
 A.SMeventsEnabled = [1 1 1 0 0 0 0 0];
 A.startReportingEvents();
-
+%A.scope;
+%A.scope_StartStop;
 % Setting the seriers messages for opening the odor valve
 % valve 8 is the vacumm; valve 1 is odor 1; valve 2 is odor 2
-LoadSerialMessages('ValveModule2', {['O' 1],['C' 1],['O' 2],['C' 2],...
-    ['O' 3],['C' 3],['O' 4],['C' 4],['O' 5],['C' 5],['O' 6],['C' 6],...
-    ['O' 7],['C' 7],['O' 8],['C' 8]});
+LoadSerialMessages('ValveModule2', {['O' 1], ['C' 1],['O' 2], ['C' 2],['O' 8], ['C' 8], ['O' 5], ['C' 5]});
+%LoadSerialMessages('ValveModule3', {['O' 8], ['C' 8]});
 
-AllValveOnIds = 1:2:16;
+% include the block sequence
+if S.GUI.TrainingLevel ~=4
+    trialseq = [2,2];
+    TrialTypes = repmat(trialseq,1,500);
+else
+    %break the random sequence into pseudo random (no more than 3 smae trial type in a row)
+    for i= 1:length(TrialTypes)
+        if i>3
+            if TrialTypes(i-1) == TrialTypes(i-2) && TrialTypes(i-2) == TrialTypes(i-3)
+                if TrialTypes(i-1) ==1
+                   TrialTypes(i) =2;
+                else
+                   TrialTypes(i) =1; 
+                end
+            end
+        end
+    end
+    
+end
 
-% test all valves randomly
-allvalves = [1 2 3 4 5 6];
-r = randi([1 6],1,200);
-randvalve = allvalves(r);
+%--- Initialize plots and start USB connections to any modules
+BpodParameterGUI('init', S); % Initialize parameter GUI plugin
 
-% test one valve
-valvetotest = 1;
-singlevalve = ones(1,200)*valvetotest;
+BpodSystem.SoftCodeHandlerFunction = 'SoftCodeHandler_MoveZaber';
 
 odorvalvetimes = [1 1];
 
-% CHANGE ME to randvalve if that's what you want
-TrialTypes = singlevalve;
-valveonids = AllValveOnIds(TrialTypes);
-
-BpodParameterGUI('init', S); % Initialize parameter GUI plugin
+ITI_rand_vals = [0 1 2 3 4 5];
 
 %% Main loop (runs once per trial)
 
-blankon = 14;
-blankoff = 13;
-vacon = 16;
-vacoff = 15; 
-preloadtime = 1;
 for currentTrial = 1:MaxTrials
-    odoron = valveonids(currentTrial);
-    odoroff = odoron+1;
-
-    disp(['Trial# ' num2str(currentTrial) ' TrialType: ' num2str(TrialTypes(currentTrial)) ' ' num2str(odoron)])
-    S = BpodParameterGUI('sync', S); % Sync parameters with BpodParameterGUI plugin
-    R = GetValveTimes(S.GUI.RewardAmount, [1 2]); LeftValveTime = R(1); RightValveTime = R(2); % Update reward amounts
+    
+    % vary ITI
+    r = randi([1 6]);
+    ITI_rand = ITI_rand_vals(r);
 
     %--- Assemble state machine
     sma = NewStateMachine();
 
     % ---- TRIAL START -----
 
+    sma = AddState(sma,'Name','Initiation',... % Initiation of a new trial with 2 s baseline
+        'Timer',10,...
+        'StateChangeConditions', {'Tup', 'BlankOff'},...
+        'OutputActions',{'BNCState',1});
+
     % turn off blank
-    sma = AddState(sma, 'Name', 'BlankOff', ... % Initiation
-        'Timer', 0,...
-        'StateChangeConditions ', {'Tup', 'OdorValveOn'},...
-        'OutputActions', {'ValveModule2', blankoff}); 
+    sma = AddState(sma, 'Name', 'BlankOff', ... %Open specific odor valve
+        'Timer', 3,...
+        'StateChangeConditions ', {'Tup', 'exit'},...
+        'OutputActions', {'BNCState',0}); 
 
-    % open odor valve (preload), trigger
-    sma = AddState(sma, 'Name', 'OdorValveOn', ... %Open specific odor valve
-        'Timer', preloadtime,...
-        'StateChangeConditions ', {'Tup', 'VaccuumOff'},...
-        'OutputActions', {'ValveModule2', odoron}); 
-
-    % vaccuum off - ODOR DELIVERED
-    sma = AddState(sma, 'Name', 'VaccuumOff', ... 
-        'Timer', S.GUI.SamplingDuration,...
-        'StateChangeConditions', {'Tup', 'VaccuumOn'},...
-        'OutputActions', {'ValveModule2', vacoff,'BNCState',1});
-
-    % vaccuum on - ODOR REMOVED
-     sma = AddState(sma, 'Name', 'VaccuumOn', ... 
-        'Timer', 0,...
-        'StateChangeConditions', {'Tup', 'OdorValveOff'},...
-        'OutputActions', {'ValveModule2', vacon, 'BNCState', 0});
-
-    % close odor valve
-    sma = AddState(sma, 'Name', 'OdorValveOff', ...
-    'Timer', 0,...
-    'StateChangeConditions ', {'Tup', 'BlankOn'},...
-    'OutputActions', {'ValveModule2', odoroff});
-    
-    % open blank valve
-    sma = AddState(sma, 'Name', 'BlankOn', ...
-    'Timer', 0,...
-    'StateChangeConditions ', {'Tup', 'ITI'},...
-    'OutputActions', {'ValveModule2', blankon});
-
-    
-
-     sma = AddState(sma, 'Name', 'ITI', ...
-    'Timer', S.GUI.ITI,...
-    'StateChangeConditions', {'Tup', '>exit'},...
-    'OutputActions', {});
     
     SendStateMatrix(sma); % Send state machine to the Bpod state machine device
     RawEvents = RunStateMatrix; % Run the trial and return events
@@ -164,5 +136,4 @@ for currentTrial = 1:MaxTrials
         clear global port;
         return
     end
-    
 end

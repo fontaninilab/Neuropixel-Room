@@ -10,8 +10,8 @@ MaxTrials = 10000; % Set to some sane value, for preallocation
 
 TrialTypes = ceil(rand(1,MaxTrials)*2);
 
-valve1 = 2; v1 = (2*valve1)-1; Taste1 = 'Water';
-valve2 = 2; v2 = (2*valve2)-1; Taste2 = 'Water';
+valve1 = 3; v1 = (2*valve1)-1; Taste1 = 'Water';
+valve2 = 3; v2 = (2*valve2)-1; Taste2 = 'Water';
 
 %--- Define parameters and trial structure
 S = BpodSystem.ProtocolSettings; % Loads settings file chosen in launch manager into current workspace as a struct called 'S'

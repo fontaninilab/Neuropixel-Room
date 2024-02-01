@@ -55,11 +55,11 @@ A.ResetVoltages = [0.4 0.4 0.1 1.5 1.5 1.5 1.5 1.5]; %Should be at or slightly a
 
 A.SMeventsEnabled = [1 1 1 0 0 0 0 0];
 A.startReportingEvents();
-%A.scope;
-%A.scope_StartStop;
+A.scope;
+A.scope_StartStop;
 % Setting the seriers messages for opening the odor valve
 % valve 8 is the vacumm; valve 1 is odor 1; valve 2 is odor 2
-LoadSerialMessages('ValveModule2', {['O' 1], ['C' 1],['O' 2], ['C' 2], ['O' 8], ['C' 8]});
+LoadSerialMessages('ValveModule2', {['O' 1], ['C' 1],['O' 2], ['C' 2],['O' 8], ['C' 8], ['O' 5], ['C' 5]});
 %LoadSerialMessages('ValveModule3', {['O' 8], ['C' 8]});
 
 % include the block sequence
@@ -105,6 +105,8 @@ for currentTrial = 1:MaxTrials
 
     vaccuumon = 6;
     vaccuumoff = 5;
+    blankoff = 7;
+    blankon = 8;
 
     switch TrialTypes(currentTrial)
         case 1  % left trials; delivery of tastant from line 1
@@ -145,14 +147,20 @@ for currentTrial = 1:MaxTrials
 
     sma = AddState(sma,'Name','Initiation',... % Initiation of a new trial with 2 s baseline
         'Timer',2,...
-        'StateChangeConditions', {'Tup', 'OdorValveOn'},...
+        'StateChangeConditions', {'Tup', 'BlankOff'},...
         'OutputActions',{'BNCState',1});
 
-    % open nitogen valve
+    % turn off blank
+    sma = AddState(sma, 'Name', 'BlankOff', ... %Open specific odor valve
+        'Timer', 0,...
+        'StateChangeConditions ', {'Tup', 'OdorValveOn'},...
+        'OutputActions', {'ValveModule2', blankoff,'BNCState',0}); 
+
+    % open odor valve
     sma = AddState(sma, 'Name', 'OdorValveOn', ... %Open specific odor valve
         'Timer', odorvalvetime,...
         'StateChangeConditions ', {'Tup', 'VaccuumOff'},...
-        'OutputActions', {'ValveModule2', odoropen,'BNCState',0}); 
+        'OutputActions', {'ValveModule2', odoropen}); 
 
     % vaccuum off - ODOR DELIVERED
     sma = AddState(sma, 'Name', 'VaccuumOff', ... 
@@ -161,16 +169,22 @@ for currentTrial = 1:MaxTrials
         'OutputActions', {'ValveModule2', vaccuumoff});
 
     % vaccuum on - ODOR REMOVED
-    sma = AddState(sma, 'Name', 'VaccuumOn', ... 
-    'Timer', 0.01,...
-    'StateChangeConditions', {'Tup', 'OdorValveOff'},...
-    'OutputActions', {'ValveModule2', vaccuumon});
+     sma = AddState(sma, 'Name', 'VaccuumOn', ... 
+        'Timer', 0,...
+        'StateChangeConditions', {'Tup', 'OdorValveOff'},...
+        'OutputActions', {'ValveModule2', vaccuumon});
 
-    % close nitrogen valve
+    % close odor valve
     sma = AddState(sma, 'Name', 'OdorValveOff', ...
-    'Timer', 0.01,...
-    'StateChangeConditions ', {'Tup', 'MyDelay'},...
+    'Timer', 0,...
+    'StateChangeConditions ', {'Tup', 'BlankOn'},...
     'OutputActions', {'ValveModule2', odorclose});
+    
+    % open blank valve
+    sma = AddState(sma, 'Name', 'BlankOn', ...
+    'Timer', 0,...
+    'StateChangeConditions ', {'Tup', 'MyDelay'},...
+    'OutputActions', {'ValveModule2', blankon});
 
     % delay
     sma = AddState(sma, 'Name', 'MyDelay', ...
@@ -190,21 +204,6 @@ for currentTrial = 1:MaxTrials
         'StateChangeConditions', {'Tup', 'Timeout', 'AnalogIn1_1', leftAction, 'AnalogIn1_2', rightAction},...
         'OutputActions', {});
 
-    %{
-    switch TrialTypes(currentTrial) % with correction
-
-          case 1 % left trials; only see whether animals lick left spout
-              sma = AddState(sma, 'Name', 'WaitForLateralLicks', ... 
-                  'Timer', S.GUI.ResponseTime,...
-                  'StateChangeConditions', {'Tup', 'Timeout', 'AnalogIn1_1', leftAction},...
-                  'OutputActions', {});
-          case 2
-              sma = AddState(sma, 'Name', 'WaitForLateralLicks', ...
-                  'Timer', S.GUI.ResponseTime,...
-                  'StateChangeConditions', {'Tup', 'Timeout', 'AnalogIn1_2', rightAction},...
-                  'OutputActions', {});
-     end
-    %}
      sma = AddState(sma, 'Name', 'Reward', ... 
     'Timer', tastevalvetime,...
     'StateChangeConditions', {'Tup', 'Drinking'},...
@@ -251,20 +250,48 @@ for currentTrial = 1:MaxTrials
         return
     end
     
-    Outcomes = zeros(1,BpodSystem.Data.nTrials); %Use for graph
+     Outcomes = zeros(1,BpodSystem.Data.nTrials); %Use for graph
     Outcomes2 = zeros(1,BpodSystem.Data.nTrials); %Populate for cumsum plot
+    first_lick_L =  zeros(1,BpodSystem.Data.nTrials);
+    first_lick_R =  zeros(1,BpodSystem.Data.nTrials);
+    R_count = zeros(1,BpodSystem.Data.nTrials);
+    L_count = zeros(1,BpodSystem.Data.nTrials);
+    R_correct = zeros(1,BpodSystem.Data.nTrials);
+    L_correct = zeros(1,BpodSystem.Data.nTrials);
+
     for x = 1:BpodSystem.Data.nTrials
         aa = BpodSystem.Data.RawEvents.Trial{x}.Events;
 
+        if BpodSystem.Data.TrialSequence(x) ==1
+            L_count(x)=1;
+        elseif BpodSystem.Data.TrialSequence(x) ==2
+            R_count(x)=1;
+        end
+
+        if isfield(aa, 'AnalogIn1_1')
+            first_lick_L(x) = aa.AnalogIn1_1(1);
+        elseif isfield(aa, 'AnalogIn1_2')
+            first_lick_R(x) = aa.AnalogIn1_2(1);
+        end
+
         if ~isnan(BpodSystem.Data.RawEvents.Trial{x}.States.Reward(1))
+            if BpodSystem.Data.TrialSequence(x) ==1
+                L_correct(x)=1;
+            elseif BpodSystem.Data.TrialSequence(x) ==2
+                R_correct(x)=1;
+            end
+
             if isfield(aa, 'AnalogIn1_1') && isfield(aa, 'AnalogIn1_2')
-                Outcomes(x) = 2; %If correct, mark as green
+                Outcomes(x) = 2; %If correct w both licks, mark as green open
                 Outcomes2(x) = 1;
             else
                 Outcomes(x) = 1; %If correct, mark as green
                 Outcomes2(x) = 1;
             end
-        elseif isfield(aa, 'AnalogIn1_1') || isfield(aa, 'AnalogIn1_2')
+        elseif isfield(aa, 'AnalogIn1_1')
+            Outcomes(x) = 0; %If response, but wrong, mark as red
+            Outcomes2(x) = 0;
+        elseif isfield(aa, 'AnalogIn1_2')
             Outcomes(x) = 0; %If response, but wrong, mark as red
             Outcomes2(x) = 0;
         elseif ~isnan(BpodSystem.Data.RawEvents.Trial{x}.States.Timeout(1))
@@ -276,8 +303,23 @@ for currentTrial = 1:MaxTrials
     
     TrialTypeOutcomePlotModified(BpodSystem.GUIHandles.OutcomePlot,'update',BpodSystem.Data.nTrials+1,TrialTypes,Outcomes)
     
-    figure(100);
-    plot(nancumsum(Outcomes2)./([1:length(Outcomes2)]),'-o','Color','#ad6bd3','MarkerFaceColor','#ad6bd3')
+    %figure(100);
+    %plot(nancumsum(Outcomes2)./([1:length(Outcomes2)]),'-o','Color','#ad6bd3','MarkerFaceColor','#ad6bd3')
+    %xlabel('Trial #','fontsize',16);ylabel('Performance','fontsize',16); title(['Performance for Training ' num2str(S.GUI.TrainingLevel)],'fontsize',20)
+    %grid on
+
+figure(101); 
+    plot(cumsum(R_correct)./(cumsum(R_count)),'-o');hold on;
+    plot(nancumsum(Outcomes2)./([1:length(Outcomes2)]),'-o','Color','#ad6bd3','MarkerFaceColor','#ad6bd3');
+    plot(cumsum(L_correct)./(cumsum(L_count)),'-o'); hold off;
+
     xlabel('Trial #','fontsize',16);ylabel('Performance','fontsize',16); title(['Performance for Training ' num2str(S.GUI.TrainingLevel)],'fontsize',20)
+    grid on
+        
+    figure(102);
+    plot(first_lick_R','-o'); hold on;
+    plot(first_lick_L','-o'); hold off;
+    xlabel('Trial #','fontsize',16);ylabel('Time to lick (s)','fontsize',16); title(['Lick time ' num2str(S.GUI.TrainingLevel)],'fontsize',20)
+    legend('right','left');
     grid on
 end

@@ -24,7 +24,7 @@ if position == 1 || position == 2
     device = Zaber.AsciiDevice.initialize(protocol, 2); % Central Spout
     switch position
         case 1 % going Forward
-            distance = 21;
+            distance =22;
             position = device.Units.positiontonative(distance/1000); % convert mm to m
             device.moveabsolute(position); % Tell the device to move.
             device.waitforidle(); % Wait for the move to finish.

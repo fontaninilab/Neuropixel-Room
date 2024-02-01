@@ -34,12 +34,12 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     S.GUI.MotorTime = 0.5;
     S.GUI.Up        = 14;
     S.GUI.Down      =   5;
-    S.GUI.ResponseTime =8; %10;
+    S.GUI.ResponseTime =12; %10;
     S.GUI.DrinkTime = 3;
     S.GUI.RewardAmount = 5; % in ul
     S.GUI.PunishTimeoutDuration =6; %10;
     S.GUI.AspirationTime = 1; 
-    S.GUI.ITI = 14;%2; %10;
+    S.GUI.ITI = 10;%2; %10;
     
 end
 % set the threshold for the analog input signal to detect events
@@ -59,11 +59,11 @@ A.scope;
 A.scope_StartStop;
 % Setting the seriers messages for opening the odor valve
 % valve 8 is the vacumm; valve 1 is odor 1; valve 2 is odor 2
-LoadSerialMessages('ValveModule2', {['O' 1], ['C' 1],['O' 2], ['C' 2], ['O' 8], ['C' 8]});
+LoadSerialMessages('ValveModule2', {['O' 1], ['C' 1],['O' 2], ['C' 2],['O' 8], ['C' 8], ['O' 5], ['C' 5]});
 %LoadSerialMessages('ValveModule3', {['O' 8], ['C' 8]});
 
 % include the block sequence
-trialseq = [1,1,2,2];
+trialseq = [2,2,2,1,1,2,2];
 TrialTypes = repmat(trialseq,1,500);
 
 %  Initialize plots
@@ -87,6 +87,8 @@ for currentTrial = 1:MaxTrials
 
     vaccuumon = 6;
     vaccuumoff = 5;
+    blankoff = 7;
+    blankon = 8;
 
     switch TrialTypes(currentTrial)
         case 1  % left trials; delivery of tastant from line 1
@@ -121,16 +123,22 @@ for currentTrial = 1:MaxTrials
 
     % ---- TRIAL START -----
 
-    sma = AddState(sma,'Name','Initiation',... % Initiation of a new trial with 2 s baseline
+sma = AddState(sma,'Name','Initiation',... % Initiation of a new trial with 2 s baseline
         'Timer',2,...
-        'StateChangeConditions', {'Tup', 'OdorValveOn'},...
+        'StateChangeConditions', {'Tup', 'BlankOff'},...
         'OutputActions',{'BNCState',1});
 
-    % open nitogen valve
+    % turn off blank
+    sma = AddState(sma, 'Name', 'BlankOff', ... %Open specific odor valve
+        'Timer', 0,...
+        'StateChangeConditions ', {'Tup', 'OdorValveOn'},...
+        'OutputActions', {'ValveModule2', blankoff,'BNCState',0}); 
+
+    % open odor valve
     sma = AddState(sma, 'Name', 'OdorValveOn', ... %Open specific odor valve
         'Timer', odorvalvetime,...
         'StateChangeConditions ', {'Tup', 'VaccuumOff'},...
-        'OutputActions', {'ValveModule2', odoropen,'BNCState',0}); 
+        'OutputActions', {'ValveModule2', odoropen}); 
 
     % vaccuum off - ODOR DELIVERED
     sma = AddState(sma, 'Name', 'VaccuumOff', ... 
@@ -139,16 +147,22 @@ for currentTrial = 1:MaxTrials
         'OutputActions', {'ValveModule2', vaccuumoff});
 
     % vaccuum on - ODOR REMOVED
-    sma = AddState(sma, 'Name', 'VaccuumOn', ... 
-    'Timer', 0.01,...
-    'StateChangeConditions', {'Tup', 'OdorValveOff'},...
-    'OutputActions', {'ValveModule2', vaccuumon});
+     sma = AddState(sma, 'Name', 'VaccuumOn', ... 
+        'Timer', 0,...
+        'StateChangeConditions', {'Tup', 'OdorValveOff'},...
+        'OutputActions', {'ValveModule2', vaccuumon});
 
-    % close nitrogen valve
+    % close odor valve
     sma = AddState(sma, 'Name', 'OdorValveOff', ...
-    'Timer', 0.01,...
-    'StateChangeConditions ', {'Tup', 'MyDelay'},...
+    'Timer', 0,...
+    'StateChangeConditions ', {'Tup', 'BlankOn'},...
     'OutputActions', {'ValveModule2', odorclose});
+    
+    % open blank valve
+    sma = AddState(sma, 'Name', 'BlankOn', ...
+    'Timer', 0,...
+    'StateChangeConditions ', {'Tup', 'MyDelay'},...
+    'OutputActions', {'ValveModule2', blankon});
 
     % delay
     sma = AddState(sma, 'Name', 'MyDelay', ...

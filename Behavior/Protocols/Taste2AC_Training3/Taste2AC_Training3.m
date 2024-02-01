@@ -10,8 +10,8 @@ MaxTrials = 10000; % Set to some sane value, for preallocation
 
 TrialTypes = ceil(rand(1,MaxTrials)*2);
 
-valve1 = 8; v1 = (2*valve1)-1; %Associated with left correct
-valve2 = 1; v2 = (2*valve2)-1; %Associated with right corret
+valve1 = 7; v1 = (2*valve1)-1; %Associated with left correct
+valve2 = 2; v2 = (2*valve2)-1; %Associated with right corret
 
 %---Define parameters and trial structure---
 S = BpodSystem.ProtocolSettings; % Loads settings file chosen in launch manager into current workspace as a struct called 'S'
@@ -63,8 +63,8 @@ LoadSerialMessages('ValveModule1', {['O' 1], ['C' 1],['O' 2], ['C' 2],['O' 3], [
 
 % include the block sequence
 if S.GUI.TrainingLevel ~=4
-%    trialseq = [2,2,2,1,1,1];
-    trialseq = [1,1,1,2,2,2];
+   trialseq = [2,2,2,1,1,1];
+%     trialseq = [1,1,1,2,2,2];
     TrialTypes = repmat(trialseq,1,500);
 else
     %break the random sequence into pseudo random (no more than 3 smae trial type in a row)
@@ -102,8 +102,7 @@ TotalRewardDisplay('init');
 % valvetimes= [0.170175198882614	0.168330685774158	0.129059122511895	0.128404332713604	0.135159131734474	0.135159131734474	0.135159131734474	0.179362188070480]; %3ul 6/6/23
 % valvetimes= [0.160442462674816	0.168330685774158	0.129059122511895	0.128404332713604	0.135159131734474	0.135159131734474	0.135159131734474	0.164861838278069]; % 3ul 6/23/23
 % valvetimes=[0.219132108962338	0.237617872714368	0.188261051628414	0.194688384124161	0.191379735900284	0.191379735900284	0.191379735900284	0.224489528795812]; %4ul 6/23/23 new spout
-valvetimes=[0.271654559851275	0.168330685774158	0.129059122511895	0.128404332713604	0.135159131734474	0.135159131734474	0.135159131734474	0.249830912304973]; %3ul 6/29/23
-% valvetimes= [0.365754925924651	0.307617872714368	0.308261051628414	0.304688384124161	0.311379735900284	0.301379735900284	0.301379735900284	0.339864620046774]; % 4ul 6/29/23 measured horz
+valvetimes=[0.228353327306018	0.232015183439757	0.275023283423226	0.214166349433253	0.221691950592722	0.219748611779287	0.228973793602024	0.224751165191279];%4ul new 9v spout, 9/30/23
 
 %% Main loop (runs once per trial)
 for currentTrial = 1:MaxTrials
