@@ -1,4 +1,4 @@
-function [spikes,events,fs,cellInfo,labels] = getSpikeEventsKS_cz(myPath)
+function [spikes,events,fs,cellInfo,labels] = getSpikeEventsKS_cz(myPath,MouseID,SessionID,SessionGate)
 %
 % This function loads spikes, events, and other cell info from
 % kilosort-sorted data recorded by spikeGLX.
@@ -28,13 +28,14 @@ function [spikes,events,fs,cellInfo,labels] = getSpikeEventsKS_cz(myPath)
 %% Extract file names
 fileChunks = strsplit(myPath,'\');
 nameChunks = strsplit(fileChunks{end},'_');
-
+run_name=[MouseID '_' SessionID '_g' SessionGate];
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %        Extract events
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[trialStartEv, fsEv] = loadEventDataSGLX(myPath,'D');
-[lickEv, ~ ] =  loadEventDataSGLX(myPath,'A',[1 2 3],{'central','left','right'});
+NI_binName = [run_name '_t0.nidq.bin'];
+[trialStartEv, fsEv] = loadEventDataSGLX_cz(myPath,NI_binName,'D');
+[lickEv, ~ ] =  loadEventDataSGLX_cz(myPath,NI_binName,'A',[1 2 3],{'central','left','right'});
 
 % Save all event info in one
 events.MouseID = nameChunks{1};
@@ -65,30 +66,45 @@ events.fsEv = fsEv;
 % ap_metaName = [fileChunks{end} '_tcat.imec0.ap.meta']; %Name of ap.meta file
 % ap_meta = SGLXReadMeta(ap_metaName, [myPath '\' fileChunks{end} '_imec0']);
 
-ap_metaName = [fileChunks{end} '_t0_CAR.imec.ap.meta']; %Name of ap.meta file
-ap_meta = SGLXReadMeta(ap_metaName, [myPath '\' fileChunks{end} '_CAR']);
+% ap_metaName = [fileChunks{end} '_t0_CAR.imec.ap.meta']; %Name of ap.meta file
+% ap_meta = SGLXReadMeta(ap_metaName, [myPath '\' fileChunks{end} '_CAR']);
 
 % ap_metaName = [fileChunks{end} '_t0.imec0.ap.meta']; %Name of ap.meta file
 % ap_meta = SGLXReadMeta(ap_metaName, [myPath '\' fileChunks{end} '_imec0']);
 
+% ap_metaName = [run_name '_t0.imec0.ap.meta']; %Name of ap.meta file
+ap_metaName = [run_name '_tcat.imec0.ap.meta']; %Name of ap.meta file
+% ap_metaName = [fileChunks{end} '_tcat.imec0.ap.meta']; %Name of ap.meta file
+
+ap_meta = SGLXReadMeta(ap_metaName, [myPath '\' run_name '_imec0']);
+% ap_meta = SGLXReadMeta(ap_metaName, [myPath '\' fileChunks{end} '_imec0']);
 
 fs = str2double(ap_meta.imSampRate);
 
 %%%%%%%% 2. Load spike times and cluster IDs %%%%%%%%
-spks = double(readNPY(fullfile([myPath '\' fileChunks{end} '_CAR'],'spike_times.npy'))) / fs;
-clust  = double(readNPY(fullfile([myPath '\' fileChunks{end} '_CAR'],'spike_clusters.npy')));
+% spks = double(readNPY(fullfile([myPath '\' fileChunks{end} '_CAR'],'spike_times.npy'))) / fs;
+% clust  = double(readNPY(fullfile([myPath '\' fileChunks{end} '_CAR'],'spike_clusters.npy')));
 
 % spks = double(readNPY(fullfile([myPath '\' fileChunks{end} '_imec0'],'spike_times.npy'))) / fs;
 % clust  = double(readNPY(fullfile([myPath '\' fileChunks{end} '_imec0'],'spike_clusters.npy')));
 
+% spks = double(readNPY(fullfile([myPath '\' fileChunks{end} '_imec0\imec0_ks3'],'spike_times.npy'))) / fs;
+% clust  = double(readNPY(fullfile([myPath '\' fileChunks{end} '_imec0\imec0_ks3'],'spike_clusters.npy')));
+spks = double(readNPY(fullfile([myPath '\' run_name  '_imec0\imec0_ks3'],'spike_times.npy'))) / fs;
+clust  = double(readNPY(fullfile([myPath '\' run_name  '_imec0\imec0_ks3'],'spike_clusters.npy')));
+
+
 % load cluster groups
-opts = delimitedTextImportOptions("NumVariables", 4);
+opts = delimitedTextImportOptions("NumVariables", 38);
 opts.DataLines = [2, Inf];
 opts.Delimiter = "\t";
-opts.VariableNames = ["id", "Amplitude", "ContamPct", "KSLabel", "amp", "ch", "depth", "fr", "group", "n_spikes", "sh"];
-opts.VariableTypes = ["double", "double", "double", "char", "double", "double", "double", "double", "char", "double", "double"];
+% opts.VariableNames = ["id", "Amplitude", "ContamPct", "KSLabel", "amp", "ch", "depth", "fr", "group", "n_spikes", "sh"];
+% opts.VariableTypes = ["double", "double", "double", "char", "double", "double", "double", "double", "char", "double", "double"];
+opts.VariableNames = ["id",  "ContamPct", "KSLabel", "PT_ratio", "amp","amplitude","amplitude_cutoff", "ch", "contam_rate","cumulative_drift","d_prime","depth", "duration","epoch_name","epoch_name_quality_metrics","epoch_name_waveform_metrics","firing_rate","fr","group","halfwidth","isi_viol","isolation_distance","l_ratio","max_drift","n_spikes","nn_hit_rate","nn_miss_rate","num_viol","peak_channel","presence_ratio","recovery_slope","repolarization_slope","sh","silhouette_score","snr","spread","velocity_above","velocity_below"];
+opts.VariableTypes = ["double", "double", "char",    "double",  "double","double",  "double",       "double", "double",   "double",         "double",  "double" ,"double",  "char",   "char", "char",                                                "double", "double", "char",   "double", "double",   "double",  "double", "double",  "double", "double",   "double",          "double",   "double",      "double",      "double",             "double",   "double", "double",        "double", "double","double", "double"];
 % dat = readtable([myPath '\' fileChunks{end} '_imec0\cluster_info.tsv'],opts);
-dat = readtable([myPath '\' fileChunks{end} '_CAR\cluster_info.tsv'],opts);
+% dat = readtable([myPath '\' fileChunks{end} '_CAR\cluster_info.tsv'],opts);
+dat = readtable([myPath '\' run_name '_imec0\imec0_ks3\cluster_info.tsv'],opts);
 
 % discard noise clusters and clusters with no group name (not marked when
 % sorting)
@@ -115,8 +131,8 @@ spikes.depth = depth;
 labels = {'mouseID','sessionID','clustID','cellNum','unitType','unitTypeNum','channel','depth','meanFR'};
 for i = 1:length(spikes.clustID)
 
-    cellInfo{i,1} = nameChunks{1}; % mouse
-    cellInfo{i,2} = nameChunks{2}; % session
+    cellInfo{i,1} = MouseID; % mouse
+    cellInfo{i,2} = SessionID; % session
     cellInfo{i,3} = spikes.clustID(i); % cluster ID
     cellInfo{i,4} = i; % unit number;
     cellInfo{i,5} = spikes.labels{i}; % unit type
