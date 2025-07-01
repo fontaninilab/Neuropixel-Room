@@ -11,7 +11,7 @@ nPad = 2;
 trialseq = [1,1,1,2,2,2];
 TrialTypePad = repmat(trialseq,1,nPad);
 % 
- valveseq = [1,1,1,1,1,1];
+ valveseq = [1,1,1,8,8,8];
 %  valveseq = [8,8,8,1,1,1];
 ValveSeqPad = repmat(valveseq,1,nPad);
 
@@ -89,9 +89,9 @@ end
 
 
 ValveSeq = TrialTypes;
-Type1ValveIDX = 1:4;
+Type1ValveIDX = 1;
 % Type1ValveIDX = 5:8;
- Type2ValveIDX = 5:8;
+ Type2ValveIDX = 8;
 % Type2ValveIDX = 1:4;
 nRep = 4; %Number of repeats of each valve # per "block"
 
@@ -138,7 +138,7 @@ BpodSystem.SoftCodeHandlerFunction = 'SoftCodeHandler_MoveZaber';
 
 % TotalRewardDisplay('init'); 
 
-valvetimes= [0.35	0.237617872714368	0.188261051628414	0.194688384124161	0.191379735900284	0.191379735900284	0.191379735900284	0.245306682107329]; %4ul 6/6/23
+valvetimes= [0.4 0.2	0.188261051628414	0.194688384124161	0.191379735900284	0.191379735900284	0.191379735900284	0.4]; %4ul 6/6/23
 % valvetimes= [0.233448793485195	0.237617872714368	0.191379735900284	0.191379735900284	0.191379735900284	0.191379735900284	0.191379735900284	0.246900099087269]; %4ul 5/10/23
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Reminder to press record
@@ -211,7 +211,7 @@ for currentTrial = 1:MaxTrials
                      'Channel', 'BNC2', 'OnLevel', 1, 'OffLevel', 0,...
                      'Loop', 1, 'SendGlobalTimerEvents', 0, 'LoopInterval', 0.01); 
   sma = AddState(sma, 'Name', 'TimerTrig', ...
-    'Timer', 0,...
+    'Timer', 3,...
     'StateChangeConditions', {'Tup', 'TasteValveOn'},...
     'OutputActions', {'GlobalTimerTrig', 1});
     %NOTE: OutputAction occurs at the beginning of the 'Timer'
@@ -222,7 +222,7 @@ for currentTrial = 1:MaxTrials
  
      sma = AddState(sma, 'Name', 'TasteValveOff', ... % This example state does nothing, and ends after 0 seconds
         'Timer', 0.01,...
-        'StateChangeConditions', {'Tup', 'Timeout'},...
+        'StateChangeConditions', {'Tup', 'Timebeforerinse'},...
         'OutputActions', {'ValveModule1', valveID+1,'BNC1',0});
     
 %     sma = AddState(sma, 'Name', 'CentralForward', ... %Central spout moves forward
@@ -287,20 +287,27 @@ for currentTrial = 1:MaxTrials
 %         'StateChangeConditions', {'Tup', 'AspirationUp'},...
 %         'OutputActions', {'SoftCode', 4});
     
-    sma = AddState(sma, 'Name', 'Timeout', ...%%% 1st ITI (before rinse)
-        'Timer', S.GUI.PunishTimeoutDuration,...
-        'StateChangeConditions', {'Tup', 'VacumnOn'},...
-        'OutputActions', {'SoftCode', 4});
+    sma = AddState(sma, 'Name', 'Timebeforerinse', ...%%% 1st ITI (before rinse)
+        'Timer', 10,...
+        'StateChangeConditions', {'Tup', 'RinseOn'},...
+        'OutputActions', {});
     
 %     sma = AddState(sma, 'Name', 'AspirationUp', ...
 %         'Timer', 0.5,...
 %         'StateChangeConditions', {'Tup', 'VacumnOn'},...
 %         'OutputActions', {'SoftCode', 5});
     
-     sma = AddState(sma, 'Name', 'VacumnOn', ...%%%% Maybe IOC rinse
+     sma = AddState(sma, 'Name', 'RinseOn', ...%%%% Maybe IOC rinse
+        'Timer', S.GUI.AspirationTime,...
+        'StateChangeConditions', {'Tup', 'RinseOff'},...
+        'OutputActions', {'ValveModule1', 3});
+%         'OutputActions', {'ValveModule1', valveID+1});
+
+sma = AddState(sma, 'Name', 'RinseOff', ...%%%% Maybe IOC rinse
         'Timer', S.GUI.AspirationTime,...
         'StateChangeConditions', {'Tup', 'ITI'},...
-        'OutputActions', {'ValveState', 4});
+        'OutputActions', {'ValveModule1', 4});
+%         'OutputActions', {'ValveModule1', valveID+1});
 %     
 %     sma = AddState(sma, 'Name', 'AspirationDown', ...
 %         'Timer', 0.5,...

@@ -1,4 +1,4 @@
-function Odor2AC_Training2      
+function Odor2AC_Training2_water_rewards      
 global BpodSystem
 global port;
 port=serialport('COM9', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
@@ -28,7 +28,7 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     S.GUI.Up        = 14;
     S.GUI.Down      =   5;
     S.GUI.Forward        = 14;
-    S.GUI.ResponseTime = 12; %10;
+    S.GUI.ResponseTime = 15; %10;
     S.GUI.DrinkTime = 3;
     S.GUI.RewardAmount = 5; % in ul
     S.GUI.PunishTimeoutDuration = 5; %10;
@@ -59,7 +59,7 @@ LoadSerialMessages('ValveModule2', {['O' 1],['C' 1],['O' 2],['C' 2],...
     ['O' 7],['C' 7],['O' 8],['C' 8]});
 
 % include the block sequence
-trialseq = [6,6,6,6,1,1,1];
+trialseq = [1,1,1, 6,6,6];
 TrialTypes = repmat(trialseq,1,500);
 
 
@@ -83,7 +83,7 @@ BpodSystem.SoftCodeHandlerFunction = 'SoftCodeHandler_MoveZaber';
 for currentTrial = 1:MaxTrials
     disp(['Trial# ' num2str(currentTrial) ' TrialType: ' num2str(TrialTypes(currentTrial))])
     S = BpodParameterGUI('sync', S); % Sync parameters with BpodParameterGUI plugin
-    R = GetValveTimes(S.GUI.RewardAmount, [1 2 3 4]); LeftValveTime = R(3); RightValveTime = R(4); % Update reward amounts
+    R = GetValveTimes(S.GUI.RewardAmount, [1 2 3 4]); LeftValveTime = R(1); RightValveTime = R(2); % Update reward amounts
     disp(R)
     blankon = 14;
     blankoff = 13;
@@ -94,7 +94,7 @@ for currentTrial = 1:MaxTrials
     switch TrialTypes(currentTrial)
         case 1  % left trials; delivery of tastant from line 1
             odorvalveID = 1;
-            tastevalveID = 4;
+            tastevalveID = 1;
 
             odoropen = 1; % serial message ['O' 1]
             odorclose = 2; % serial message ['C' 1]
@@ -103,7 +103,7 @@ for currentTrial = 1:MaxTrials
 
         case 6  % right trials; delivery of tastant from line 2
             odorvalveID = 6;
-            tastevalveID = 8;
+            tastevalveID = 2;
 
             odoropen = 11; % serial message ['O' 6]
             odorclose = 12; % serial message ['C' 6]

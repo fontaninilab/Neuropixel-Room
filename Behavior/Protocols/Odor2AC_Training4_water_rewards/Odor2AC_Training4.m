@@ -1,4 +1,4 @@
-function Odor2AC_Training2      
+function Odor2AC_Training4      
 global BpodSystem
 global port;
 port=serialport('COM9', 115200,"DataBits",8,FlowControl="none",Parity="none",StopBits=1,Timeout=0.5);
@@ -8,7 +8,9 @@ fopen(port); %line 2-5 added 6/6/23 to control motor
 %% Setup (runs once before the first trial)
 MaxTrials = 1000; % Set to some sane value, for preallocation
 
-TrialTypes = ceil(rand(1,MaxTrials)*2);
+TrialOptions = [1 6];
+TrialTypes_temp = randi(2,1,MaxTrials);
+TrialTypes = TrialOptions(TrialTypes_temp);
 
 %--- Define parameters and trial structure
 S = BpodSystem.ProtocolSettings; % Loads settings file chosen in launch manager into current workspace as a struct called 'S'
@@ -18,7 +20,7 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     % See ParameterGUI plugin documentation to show parameters as other UI types (listboxes, checkboxes, buttons, text)
     %     S.GUI = struct;
     
-    S.GUI.TrainingLevel = 1;
+    S.GUI.TrainingLevel = 4;
     S.GUI.SamplingDuration = 0.5;
     S.GUI.TasteLeft =1; %Taste1;
     S.GUI.TasteRight = 2;%Taste2;
@@ -28,12 +30,12 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     S.GUI.Up        = 14;
     S.GUI.Down      =   5;
     S.GUI.Forward        = 14;
-    S.GUI.ResponseTime = 12; %10;
+    S.GUI.ResponseTime =8; %10;
     S.GUI.DrinkTime = 3;
     S.GUI.RewardAmount = 5; % in ul
-    S.GUI.PunishTimeoutDuration = 5; %10;
+    S.GUI.PunishTimeoutDuration =5; %10;
     S.GUI.AspirationTime = 1; 
-    S.GUI.ITI = 8; %10;
+    S.GUI.ITI = 10; %10;
     
 end
 % set the threshold for the analog input signal to detect events
@@ -59,20 +61,36 @@ LoadSerialMessages('ValveModule2', {['O' 1],['C' 1],['O' 2],['C' 2],...
     ['O' 7],['C' 7],['O' 8],['C' 8]});
 
 % include the block sequence
-trialseq = [6,6,6,6,1,1,1];
-TrialTypes = repmat(trialseq,1,500);
+if S.GUI.TrainingLevel ~=4
+    trialseq = [6,1];
+    TrialTypes = repmat(trialseq,1,500);
+else
+    %break the random sequence into pseudo random (no more than 3 smae trial type in a row)
+    for i= 1:length(TrialTypes)
+        if i>3
+            if TrialTypes(i-1) == TrialTypes(i-2) && TrialTypes(i-2) == TrialTypes(i-3)
+                if TrialTypes(i-1) ==1
+                   TrialTypes(i) =6;
+                else
+                   TrialTypes(i) =1; 
+                end
+            end
+        end
+    end
+    
+end
+
+% include the block sequence
+%trialseq = [6,6,6,6,1,1];
+%TrialTypes = repmat(trialseq,1,500);
 
 
 %  Initialize plots
-%BpodSystem.ProtocolFigures.OutcomePlotFig = figure('Position', [200 200 1000 200],'name','Trial type outcome plot', 'numbertitle','off', 'MenuBar', 'none', 'Resize', 'off'); % Create a figure for the outcome plot
-%BpodSystem.GUIHandles.OutcomePlot = axes('Position', [.075 .3 .89 .6]); % Create axes for the trial type outcome plot
-
-%PerformancePlot('init', [6 1],{'R','L'},1);
-
+%  Initialize plots
 outcomePlot = LiveOutcomePlot([1 6], {'Left [1]','','','','','Right [6]'}, TrialTypes,90);
 outcomePlot.RewardStateNames = {'Reward'};
-outcomePlot.ErrorStateNames = {'Timeout'};
-
+outcomePlot.ErrorStateNames = {'Timeout_omit'};
+outcomePlot.PunishStateNames = {'Timeout'};
 %--- Initialize plots and start USB connections to any modules
 BpodParameterGUI('init', S); % Initialize parameter GUI plugin
 
@@ -84,7 +102,7 @@ for currentTrial = 1:MaxTrials
     disp(['Trial# ' num2str(currentTrial) ' TrialType: ' num2str(TrialTypes(currentTrial))])
     S = BpodParameterGUI('sync', S); % Sync parameters with BpodParameterGUI plugin
     R = GetValveTimes(S.GUI.RewardAmount, [1 2 3 4]); LeftValveTime = R(3); RightValveTime = R(4); % Update reward amounts
-    disp(R)
+
     blankon = 14;
     blankoff = 13;
     vacon = 16;
@@ -100,6 +118,8 @@ for currentTrial = 1:MaxTrials
             odorclose = 2; % serial message ['C' 1]
 
             tastevalvetime = LeftValveTime;
+            leftAction = 'Reward'; 
+            rightAction = 'Timeout';
 
         case 6  % right trials; delivery of tastant from line 2
             odorvalveID = 6;
@@ -109,31 +129,34 @@ for currentTrial = 1:MaxTrials
             odorclose = 12; % serial message ['C' 6]
 
             tastevalvetime = RightValveTime;
+            rightAction = 'Reward';
+            leftAction = 'Timeout';
+
     end
   
-    leftAction = 'Reward'; rightAction = 'Reward';
-
     %--- Assemble state machine
     sma = NewStateMachine();
 
     % ---- TRIAL START -----
 
     sma = AddState(sma,'Name','Initiation',... % Initiation of a new trial with 2 s baseline
-        'Timer',0,...
-        'StateChangeConditions', {'Tup', 'BlankOff'},...
-        'OutputActions',{});
+        'Timer',2,...
+        'StateChangeConditions', {'Tup', 'OdorValveOn'},...
+        'OutputActions',{'BNCState',1});
+
+     % open odor valve
+    sma = AddState(sma, 'Name', 'OdorValveOn', ... %Open specific odor valve
+        'Timer', 0,...
+        'StateChangeConditions ', {'Tup', 'BlankOff'},...
+        'OutputActions', {'ValveModule2', odoropen}); 
 
     % turn off blank
     sma = AddState(sma, 'Name', 'BlankOff', ... %Open specific odor valve
-        'Timer', 0,...
-        'StateChangeConditions ', {'Tup', 'OdorValveOn'},...
-        'OutputActions', {'ValveModule2', blankoff}); 
-
-    % open odor valve
-    sma = AddState(sma, 'Name', 'OdorValveOn', ... %Open specific odor valve
         'Timer', preloadtime,...
         'StateChangeConditions ', {'Tup', 'VaccuumOff'},...
-        'OutputActions', {'ValveModule2', odoropen}); 
+        'OutputActions', {'ValveModule2', blankoff}); 
+
+   
 
     % vaccuum off - ODOR DELIVERED
     sma = AddState(sma, 'Name', 'VaccuumOff', ... 
@@ -162,29 +185,19 @@ for currentTrial = 1:MaxTrials
     % delay
     sma = AddState(sma, 'Name', 'MyDelay', ...
     'Timer', S.GUI.DelayDuration,...
-    'StateChangeConditions', {'Tup', 'CentralForward'},...
+    'StateChangeConditions', {'Tup', 'LateralUp'},...
     'OutputActions', {});
 
     % lateral up
-    sma = AddState(sma, 'Name', 'CentralForward', ...
+    sma = AddState(sma, 'Name', 'LateralUp', ...
     'Timer', S.GUI.MotorTime,...
     'StateChangeConditions', {'Tup', 'WaitForLateralLicks'},...
     'OutputActions', {'SoftCode', 3});
 
-    % lateral licks
-    switch TrialTypes(currentTrial) % with correction
-
-          case 1 % left trials; only see whether animals lick left spout
-              sma = AddState(sma, 'Name', 'WaitForLateralLicks', ... 
+    sma = AddState(sma, 'Name', 'WaitForLateralLicks', ... 
                   'Timer', S.GUI.ResponseTime,...
-                  'StateChangeConditions', {'Tup', 'Timeout', 'AnalogIn1_1', leftAction},...
+                  'StateChangeConditions', {'Tup', 'Timeout_omit', 'AnalogIn1_1', leftAction,'AnalogIn1_2', rightAction},...
                   'OutputActions', {});
-          case 6
-              sma = AddState(sma, 'Name', 'WaitForLateralLicks', ...
-                  'Timer', S.GUI.ResponseTime,...
-                  'StateChangeConditions', {'Tup', 'Timeout', 'AnalogIn1_2', rightAction},...
-                  'OutputActions', {});
-     end
 
      sma = AddState(sma, 'Name', 'Reward', ... 
     'Timer', tastevalvetime,...
@@ -193,15 +206,20 @@ for currentTrial = 1:MaxTrials
 
      sma = AddState(sma, 'Name', 'Drinking', ... 
     'Timer', S.GUI.DrinkTime,...
-    'StateChangeConditions', {'Tup', 'CentralBack'},...
+    'StateChangeConditions', {'Tup', 'LateralDown'},...
     'OutputActions', {});
 
-     sma = AddState(sma, 'Name', 'CentralBack', ... % This example state does nothing, and ends after 0 seconds
+     sma = AddState(sma, 'Name', 'LateralDown', ... % This example state does nothing, and ends after 0 seconds
     'Timer', S.GUI.MotorTime,...
     'StateChangeConditions', {'Tup', 'ITI'},...
     'OutputActions', {'SoftCode', 4});
 
      sma = AddState(sma, 'Name', 'Timeout', ...
+    'Timer', S.GUI.PunishTimeoutDuration,...
+    'StateChangeConditions', {'Tup', 'ITI'},...
+    'OutputActions', {'SoftCode', 4});
+
+      sma = AddState(sma, 'Name', 'Timeout_omit', ...
     'Timer', S.GUI.PunishTimeoutDuration,...
     'StateChangeConditions', {'Tup', 'ITI'},...
     'OutputActions', {'SoftCode', 4});
@@ -231,9 +249,7 @@ for currentTrial = 1:MaxTrials
         clear global port;
         return
     end
-
-    outcomePlot.update(TrialTypes, BpodSystem.Data);
-
+    
     Outcomes = zeros(1,BpodSystem.Data.nTrials); %Use for graph
     Outcomes2 = zeros(1,BpodSystem.Data.nTrials); %Populate for cumsum plot
     first_lick_L =  zeros(1,BpodSystem.Data.nTrials);
@@ -254,7 +270,8 @@ for currentTrial = 1:MaxTrials
 
         if isfield(aa, 'AnalogIn1_1')
             first_lick_L(x) = aa.AnalogIn1_1(1);
-        elseif isfield(aa, 'AnalogIn1_2')
+        end
+        if isfield(aa, 'AnalogIn1_2')
             first_lick_R(x) = aa.AnalogIn1_2(1);
         end
 
@@ -284,8 +301,12 @@ for currentTrial = 1:MaxTrials
         end
         
     end
-   
-     figure(101); 
+    
+    outcomePlot.update(TrialTypes, BpodSystem.Data);
+
+    %TrialTypeOutcomePlotModified(BpodSystem.GUIHandles.OutcomePlot,'update',BpodSystem.Data.nTrials+1,TrialTypes,Outcomes)
+
+    figure(101); 
     plot(cumsum(R_correct)./(cumsum(R_count)),'-o');hold on;
     plot(cumsum(L_correct)./(cumsum(L_count)),'-o');
     plot(nancumsum(Outcomes2)./([1:length(Outcomes2)]),'-o','Color','#ad6bd3','MarkerFaceColor','#ad6bd3');
@@ -302,14 +323,6 @@ for currentTrial = 1:MaxTrials
     legend('right','left');
     grid on
 
-
- %   performancePlot = PerformancePlot('update', {6 1},5);
-
-    %{
-    TrialTypeOutcomePlotModified(BpodSystem.GUIHandles.OutcomePlot,'update',BpodSystem.Data.nTrials+1,TrialTypes,Outcomes)
-
-   
-    %}
     %{
     Outcomes = zeros(1,BpodSystem.Data.nTrials); %Use for graph
     Outcomes2 = zeros(1,BpodSystem.Data.nTrials); %Populate for cumsum plot
@@ -342,8 +355,7 @@ for currentTrial = 1:MaxTrials
     xlabel('Trial #','fontsize',16);ylabel('Performance','fontsize',16); title(['Performance for Training ' num2str(S.GUI.TrainingLevel)],'fontsize',20)
     grid on
     %}
-   % disp(BpodSystem.GUIData)
-        %PerformancePlot('update', TrialTypes,Outcomes,BpodSystem.Data.nTrials);
 
+    
 
 end

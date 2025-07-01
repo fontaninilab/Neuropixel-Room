@@ -14,8 +14,8 @@ MaxTrials = 10000; % Set to some sane value, for preallocation
 
 TrialTypes = ceil(rand(1,MaxTrials)*2);
 
-valve1 = 2; v1 = (2*valve1)-1;
-valve2 = 7; v2 = (2*valve2)-1;
+valve1 = 1; v1 = (2*valve1)-1;
+valve2 = 8; v2 = (2*valve2)-1;
 
 %--- Define parameters and trial structure
 S = BpodSystem.ProtocolSettings; % Loads settings file chosen in launch manager into current workspace as a struct called 'S'
@@ -29,7 +29,9 @@ if isempty(fieldnames(S))  % If chosen settings file was an empty struct, popula
     S.GUI.SamplingDuration = 3;
     S.GUI.TasteLeft = ['Valve ' num2str(valve1)];
     S.GUI.TasteRight = ['Valve ' num2str(valve2)];
-    S.GUI.DelayDuration = 1.4;
+%     S.GUI.DelayDuration = 1.4;
+    S.GUI.DelayDuration = 1.8;
+
     S.GUI.TastantAmount = 0.05;
     S.GUI.MotorTime = 0.5;
     S.GUI.Up        = 14;

@@ -76,7 +76,7 @@ singlevalve = ones(1,200)*valvetotest;
 odorvalvetimes = [1 1];
 
 % CHANGE ME to randvalve if that's what you want
-TrialTypes_def = [1 6];
+TrialTypes_def = [1 2 3 4];
 TrialTypes = repmat(TrialTypes_def,1,50);
 %TrialTypes = repmat(allvalves,1,50);
 
@@ -87,15 +87,15 @@ BpodParameterGUI('init', S); % Initialize parameter GUI plugin
 
 %% Main loop (runs once per trial)
 
-blankon = 14;
-blankoff = 13;
+blankon = 10;
+blankoff = 9;
 vacon = 16;
 vacoff = 15; 
 
 
 preloadtime =1;
 SamplingDuration =1;%5%0.5;
-ITI = 10;
+ITI = 3;
 
 for currentTrial = 1:length(TrialTypes)
     odoron = valveonids(currentTrial);
